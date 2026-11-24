@@ -13,6 +13,9 @@ CMakeUserPresets.json
 # Binarios
 *.exe
 *.obj
+# Excecao: os modelos 3D usam a mesma extensao dos arquivos do compilador
+!modelos/*.obj
+!docs/modelos/*.obj
 *.o
 *.pdb
 *.ilk
