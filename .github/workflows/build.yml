@@ -1,0 +1,26 @@
+# Compila e roda os testes automaticamente a cada push no GitHub,
+# no Windows e no Linux. O resultado aparece na aba "Actions" do repositorio.
+name: Build e testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar
+        run: cmake -S . -B build
+
+      - name: Compilar
+        run: cmake --build build --config Release
+
+      - name: Testar
+        run: ctest --test-dir build -C Release --output-on-failure
