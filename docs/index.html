@@ -3,101 +3,165 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rasterização × Ray Tracing — Ray Tracer em C++</title>
+<title>Rasterização × Ray Tracing · Ray Tracer em C++</title>
 <meta name="description" content="Compare a mesma cena 3D desenhada em tempo real com Three.js e renderizada pelo ray tracer em C++.">
+<meta name="theme-color" content="#11151f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --fundo: #0e0e12;
-    --painel: #17171d;
-    --borda: #2a2a33;
-    --texto: #ececf1;
-    --suave: #9a9aa8;
-    --laranja: #ff8a1f;
-    --azul: #5aa9ff;
-    --raio: 14px;
+    /* Neutros: grafite azulado (nao preto puro) */
+    --fundo: #11151f;
+    --superficie: #181d2a;
+    --superficie-2: #202638;
+    --borda: #2b3247;
+    --texto: #e8ebf2;
+    --texto-2: #a3abc0;
+    --texto-3: #7a839b;
+
+    /* Uma cor por tecnica, usada de forma consistente em toda a pagina */
+    --raster: #38c6e8;        /* rasterizacao / Three.js */
+    --raster-fundo: #38c6e81a;
+    --ray: #a78bfa;           /* ray tracing / C++ */
+    --ray-fundo: #a78bfa1f;
+
+    --raio: 12px;
+    --sombra: 0 1px 0 #ffffff08 inset, 0 12px 32px -12px #00000080;
+
+    --fonte-titulo: "Space Grotesk", system-ui, sans-serif;
+    --fonte-texto: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fonte-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--fundo); color: var(--texto); }
-  body { font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  a { color: var(--laranja); }
-  .container { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+  body { font: 16px/1.65 var(--fonte-texto); -webkit-font-smoothing: antialiased; }
+  a { color: var(--texto); text-decoration-color: var(--texto-3); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--texto); }
+  b, strong { font-weight: 600; }
+  :focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; border-radius: 6px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .raster { color: var(--raster); }
+  .ray { color: var(--ray); }
 
-  header { padding: 48px 0 24px; text-align: center; }
-  header .selo { display: inline-block; font-size: 13px; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--laranja); border: 1px solid #ff8a1f55; border-radius: 99px; padding: 4px 12px; }
-  h1 { font-size: clamp(28px, 5vw, 46px); line-height: 1.15; margin: 16px 0 12px; }
-  h1 .rt { color: var(--laranja); }
-  h1 .rz { color: var(--azul); }
-  header p { color: var(--suave); max-width: 720px; margin: 0 auto; }
+  /* ---------- Cabecalho ---------- */
+  .barra { display: flex; justify-content: space-between; align-items: center; padding: 20px 0;
+    font-size: 14px; color: var(--texto-2); }
+  .barra .marca { font-family: var(--fonte-mono); color: var(--texto); text-decoration: none; }
+  .barra nav { display: flex; gap: 20px; }
+  .barra nav a { color: var(--texto-2); text-decoration: none; }
+  .barra nav a:hover { color: var(--texto); }
 
-  .controles { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin: 28px 0 16px; }
-  .grupo { display: inline-flex; background: var(--painel); border: 1px solid var(--borda); border-radius: 99px; padding: 4px; }
-  .grupo button { font: inherit; font-size: 14px; color: var(--suave); background: none; border: 0; border-radius: 99px;
-    padding: 8px 16px; cursor: pointer; }
-  .grupo button[aria-pressed="true"] { background: var(--laranja); color: #111; font-weight: 600; }
-  .grupo button:focus-visible, .botao:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; }
+  header.hero { padding: 40px 0 8px; max-width: 760px; }
+  h1, h2, h3 { font-family: var(--fonte-titulo); letter-spacing: -0.02em; }
+  h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.08; font-weight: 700; margin: 0 0 16px; }
+  .hero p { color: var(--texto-2); font-size: 18px; margin: 0; }
 
+  /* ---------- Barra de controles ---------- */
+  .controles { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: end; margin: 36px 0 16px; }
+  .campo { display: grid; gap: 6px; }
+  .campo > span { font-size: 12px; font-weight: 500; color: var(--texto-3); text-transform: uppercase; letter-spacing: .08em; }
+  .segmentado { display: inline-flex; background: var(--superficie); border: 1px solid var(--borda);
+    border-radius: 10px; padding: 3px; }
+  .segmentado button { font: 500 14px var(--fonte-texto); color: var(--texto-2); background: none; border: 0;
+    border-radius: 7px; padding: 7px 14px; cursor: pointer; transition: background .15s, color .15s; }
+  .segmentado button:hover { color: var(--texto); }
+  .segmentado button[aria-pressed="true"] { background: var(--superficie-2); color: var(--texto);
+    box-shadow: 0 0 0 1px var(--borda), 0 1px 2px #0006; }
+  .controles .direita { margin-left: auto; }
+
+  /* ---------- Paineis de comparacao ---------- */
   .comparacao { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .painel { background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; }
-  .painel .topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px;
-    border-bottom: 1px solid var(--borda); }
-  .painel .topo strong { font-size: 15px; }
-  .painel .topo small { color: var(--suave); font-size: 13px; }
-  .ponto { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; }
-  .tela { position: relative; aspect-ratio: 16 / 9; background: #000; }
+  .painel { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio);
+    overflow: hidden; box-shadow: var(--sombra); }
+  .painel header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; }
+  .rotulo { display: inline-flex; align-items: center; gap: 8px; font: 600 14px var(--fonte-texto); }
+  .rotulo i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .chip { font: 500 12px var(--fonte-mono); color: var(--texto-2); background: var(--superficie-2);
+    border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
+  .chip.raster { color: var(--raster); background: var(--raster-fundo); }
+  .chip.ray { color: var(--ray); background: var(--ray-fundo); }
+  .tela { position: relative; aspect-ratio: 16 / 9; background: #0b0e15; }
   .tela canvas, .tela img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .tela img { object-fit: cover; }
   #tela3d { cursor: grab; touch-action: none; }
   #tela3d:active { cursor: grabbing; }
-  .rodape-painel { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 16px;
-    color: var(--suave); font-size: 13px; }
-  .botao { font: inherit; font-size: 13px; color: var(--texto); background: #24242c; border: 1px solid var(--borda);
-    border-radius: 8px; padding: 6px 12px; cursor: pointer; }
-  .botao:hover { border-color: var(--laranja); }
+  .painel footer { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 10px 16px; font-size: 13px; color: var(--texto-3); border-top: 1px solid var(--borda); }
+  .botao { font: 500 13px var(--fonte-texto); color: var(--texto); background: var(--superficie-2);
+    border: 1px solid var(--borda); border-radius: 8px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+  .botao:hover { border-color: var(--texto-3); }
 
-  /* Modo slider: a imagem do ray tracer fica por cima, recortada */
+  /* Carregando / erro */
+  #estado { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center;
+    background: #0b0e15; color: var(--texto-2); font-size: 14px; transition: opacity .3s; }
+  #estado.oculto { opacity: 0; pointer-events: none; }
+  .girando { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--borda);
+    border-top-color: var(--raster); margin: 0 auto 12px; animation: girar .9s linear infinite; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  /* ---------- Modo sobrepor (slider) ---------- */
   .comparacao.slider { grid-template-columns: 1fr; }
   .comparacao.slider #painelRT { display: none; }
   #sobreposicao { display: none; }
   .comparacao.slider #sobreposicao { display: block; }
+  .comparacao.slider .tela { cursor: ew-resize; }
   #sobreposicao img { clip-path: inset(0 0 0 var(--corte, 50%)); pointer-events: none; }
-  #divisor { position: absolute; top: 0; bottom: 0; left: var(--corte, 50%); width: 3px; margin-left: -1.5px;
-    background: var(--laranja); pointer-events: none; }
-  #divisor::after { content: "◀ ▶"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: var(--laranja); color: #111; font-size: 12px; font-weight: 700; padding: 6px 8px; border-radius: 99px;
-    white-space: nowrap; }
-  .etiqueta { position: absolute; top: 12px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px;
-    background: #000a; pointer-events: none; }
-  .etiqueta.esq { left: 12px; color: var(--azul); }
-  .etiqueta.dir { right: 12px; color: var(--laranja); }
-  #faixaSlider { display: none; width: 100%; margin: 12px 0 0; accent-color: var(--laranja); }
-  .comparacao.slider ~ #faixaSlider { display: block; }
+  #divisor { position: absolute; top: 0; bottom: 0; left: var(--corte, 50%); width: 2px; margin-left: -1px;
+    background: #fff; box-shadow: 0 0 0 1px #0004; pointer-events: none; }
+  #divisor::after { content: ""; position: absolute; top: 50%; left: 50%; width: 36px; height: 36px;
+    transform: translate(-50%, -50%); border-radius: 50%; background: #fff; box-shadow: 0 4px 16px #0008;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2311151f' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l-6 6 6 6M15 6l6 6-6 6'/%3E%3C/svg%3E");
+    background-size: 18px; background-position: center; background-repeat: no-repeat; }
+  .etiqueta { position: absolute; bottom: 12px; font: 600 12px var(--fonte-texto); padding: 4px 10px; border-radius: 6px;
+    background: #11151fcc; backdrop-filter: blur(6px); pointer-events: none; }
+  .etiqueta.esq { left: 12px; color: var(--raster); }
+  .etiqueta.dir { right: 12px; color: var(--ray); }
+  #faixaSlider { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }  /* so para teclado/leitor de tela */
+  .comparacao.slider #faixaSlider:focus-visible ~ #divisor { outline: 2px solid #fff; outline-offset: 4px; }
 
-  #aviso { display: none; position: absolute; inset: 0; padding: 24px; text-align: center; place-items: center;
-    background: #0e0e12ee; color: var(--suave); font-size: 14px; }
-  #aviso.visivel { display: grid; }
+  /* ---------- Destaque "o que observar" ---------- */
+  .observe { display: flex; gap: 14px; align-items: flex-start; margin: 16px 0 0; padding: 16px 20px;
+    background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); color: var(--texto-2); }
+  .observe svg { flex: none; margin-top: 3px; color: var(--texto); }
+  .observe b { color: var(--texto); }
 
-  .observe { margin: 20px 0 8px; padding: 16px 20px; border-left: 3px solid var(--laranja); background: var(--painel);
-    border-radius: 0 var(--raio) var(--raio) 0; }
-  .observe b { color: var(--laranja); }
-
-  section { margin: 56px 0; }
-  h2 { font-size: 26px; margin: 0 0 16px; }
+  /* ---------- Secoes de conteudo ---------- */
+  section { margin: 72px 0; }
+  h2 { font-size: 28px; font-weight: 600; margin: 0 0 8px; }
+  .sub { color: var(--texto-2); margin: 0 0 24px; max-width: 680px; }
   .cartoes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .cartao { background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); padding: 20px 24px; }
-  .cartao h3 { margin: 0 0 8px; font-size: 19px; }
-  .cartao ul { margin: 0; padding-left: 20px; color: #cfcfd8; }
-  .cartao li { margin: 6px 0; }
-  table { width: 100%; border-collapse: collapse; background: var(--painel); border-radius: var(--raio); overflow: hidden; }
-  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--borda); font-size: 15px; }
-  th { color: var(--suave); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
-  tr:last-child td { border-bottom: 0; }
-  code { background: #24242c; padding: 2px 6px; border-radius: 6px; font-size: 14px; }
-  footer { padding: 32px 0 48px; text-align: center; color: var(--suave); font-size: 14px; border-top: 1px solid var(--borda); }
+  .cartao { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 24px;
+    border-top: 3px solid var(--cor); }
+  .cartao h3 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+  .cartao .meta { font: 500 13px var(--fonte-mono); color: var(--cor); margin: 0 0 16px; }
+  .cartao dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; font-size: 15px; }
+  .cartao dt { color: var(--texto-3); font-size: 13px; padding-top: 2px; }
+  .cartao dd { margin: 0; color: var(--texto); }
 
-  @media (max-width: 820px) {
+  .tabela { border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 12px 18px; border-bottom: 1px solid var(--borda); font-size: 15px; vertical-align: top; }
+  th { background: var(--superficie); color: var(--texto-3); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  tr:last-child td { border-bottom: 0; }
+  code { font: 13.5px var(--fonte-mono); background: var(--superficie-2); border: 1px solid var(--borda);
+    padding: 1px 6px; border-radius: 5px; }
+  .comando { display: inline-block; font: 14px var(--fonte-mono); background: var(--superficie); border: 1px solid var(--borda);
+    border-radius: 8px; padding: 10px 14px; margin: 0 0 24px; color: var(--texto); }
+  .comando::before { content: "$ "; color: var(--texto-3); }
+
+  footer.site { padding: 32px 0 48px; color: var(--texto-3); font-size: 14px; border-top: 1px solid var(--borda);
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+  footer.site a { color: var(--texto-2); }
+
+  @media (max-width: 860px) {
     .comparacao, .cartoes { grid-template-columns: 1fr; }
-    .controles { justify-content: center; }
+    .controles .direita { margin-left: 0; }
+    .barra nav { display: none; }
+    .hero p { font-size: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
   }
 </style>
 <script type="importmap">
@@ -112,108 +176,127 @@
 <body>
 <div class="container">
 
-<header>
-  <span class="selo">Ray Tracer em C++ · comparação interativa</span>
-  <h1><span class="rz">Rasterização</span> × <span class="rt">Ray Tracing</span></h1>
-  <p>A mesma cena desenhada de dois jeitos. De um lado, em <b>tempo real</b> com Three.js, do jeito que os jogos fazem.
-     Do outro, calculada raio por raio pelo <a href="https://github.com/b4el/ray-tracer">ray tracer em C++</a>.
-     Gire a cena com o mouse e compare os reflexos, o vidro e as sombras.</p>
+<div class="barra">
+  <a class="marca" href="https://github.com/b4el/ray-tracer">b4el / ray-tracer</a>
+  <nav>
+    <a href="https://github.com/b4el/ray-tracer">Código</a>
+    <a href="https://github.com/b4el/ray-tracer/tree/main/tutorial">Tutorial</a>
+    <a href="#diferenca">Como funciona</a>
+  </nav>
+</div>
+
+<header class="hero">
+  <h1><span class="raster">Rasterização</span> × <span class="ray">Ray tracing</span></h1>
+  <p>A mesma cena, desenhada de dois jeitos: em tempo real no navegador, como nos jogos, e calculada raio por raio por um ray tracer escrito do zero em C++.</p>
 </header>
 
 <div class="controles">
-  <div class="grupo" role="group" aria-label="Escolher cena">
-    <button data-cena="capa" aria-pressed="true">Capa</button>
-    <button data-cena="simples" aria-pressed="false">Simples</button>
-    <button data-cena="noite" aria-pressed="false">Noite</button>
+  <div class="campo">
+    <span id="rotCena">Cena</span>
+    <div class="segmentado" role="group" aria-labelledby="rotCena">
+      <button data-cena="capa" aria-pressed="true">Capa</button>
+      <button data-cena="simples" aria-pressed="false">Simples</button>
+      <button data-cena="noite" aria-pressed="false">Noite</button>
+    </div>
   </div>
-  <div class="grupo" role="group" aria-label="Modo de comparação">
-    <button data-modo="lado" aria-pressed="true">Lado a lado</button>
-    <button data-modo="slider" aria-pressed="false">Sobrepor</button>
+  <div class="campo direita">
+    <span id="rotModo">Visualização</span>
+    <div class="segmentado" role="group" aria-labelledby="rotModo">
+      <button data-modo="lado" aria-pressed="true">Lado a lado</button>
+      <button data-modo="slider" aria-pressed="false">Sobrepor</button>
+    </div>
   </div>
 </div>
 
 <div class="comparacao" id="comparacao">
-  <div class="painel">
-    <div class="topo">
-      <strong><span class="ponto" style="background:var(--azul)"></span>Tempo real · Three.js</strong>
-      <small id="fps">— fps</small>
-    </div>
+  <article class="painel">
+    <header>
+      <span class="rotulo" id="rotuloPainel"><i style="background:var(--raster)"></i>Rasterização · Three.js</span>
+      <span class="chip raster" id="fps">— fps</span>
+    </header>
     <div class="tela" id="telaWrap">
-      <canvas id="tela3d" aria-label="Cena 3D interativa"></canvas>
+      <canvas id="tela3d" aria-label="Cena 3D interativa. Arraste para girar."></canvas>
       <div id="sobreposicao">
         <img id="imgSobreposta" alt="">
+        <input type="range" id="faixaSlider" min="0" max="100" value="50" aria-label="Posição do divisor entre as duas imagens">
         <div id="divisor"></div>
         <span class="etiqueta esq">Three.js</span>
         <span class="etiqueta dir">Ray tracer</span>
       </div>
-      <div id="aviso"></div>
+      <div id="estado"><div><div class="girando"></div>Carregando a cena 3D…</div></div>
     </div>
-    <div class="rodape-painel">
+    <footer>
       <span id="dica">Arraste para girar · role para dar zoom</span>
       <button class="botao" id="resetar">Câmera original</button>
-    </div>
-  </div>
+    </footer>
+  </article>
 
-  <div class="painel" id="painelRT">
-    <div class="topo">
-      <strong><span class="ponto" style="background:var(--laranja)"></span>Ray tracing · C++</strong>
-      <small id="infoRT"></small>
-    </div>
+  <article class="painel" id="painelRT">
+    <header>
+      <span class="rotulo"><i style="background:var(--ray)"></i>Ray tracing · C++</span>
+      <span class="chip ray" id="tempoRT"></span>
+    </header>
     <div class="tela"><img id="imgRT" alt="Cena renderizada pelo ray tracer em C++"></div>
-    <div class="rodape-painel"><span id="tempoRT"></span></div>
-  </div>
+    <footer><span id="infoRT"></span></footer>
+  </article>
 </div>
-<input type="range" id="faixaSlider" min="0" max="100" value="50" aria-label="Posição do divisor">
 
-<div class="observe" id="observe"></div>
+<div class="observe" role="note">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+  <div id="observe"></div>
+</div>
 
-<section>
+<section id="diferenca">
   <h2>Qual a diferença?</h2>
+  <p class="sub">As duas técnicas transformam uma cena 3D em uma imagem 2D, mas fazem o caminho ao contrário.</p>
   <div class="cartoes">
-    <div class="cartao">
-      <h3 style="color:var(--azul)">Rasterização (Three.js, jogos)</h3>
-      <ul>
-        <li>Projeta cada triângulo na tela e pinta os pixels que ele cobre.</li>
-        <li>Muito rápida: dezenas de quadros por segundo, até no celular.</li>
-        <li>Reflexos, sombras e vidro são <b>aproximações</b>: mapas de ambiente, mapas de sombra e truques de shader.</li>
-        <li>Um objeto não "vê" o outro: a esfera de metal não reflete as bolinhas ao redor.</li>
-      </ul>
+    <div class="cartao" style="--cor:var(--raster)">
+      <h3>Rasterização</h3>
+      <p class="meta">Three.js · WebGL · jogos</p>
+      <dl>
+        <dt>Como</dt><dd>Projeta cada triângulo na tela e pinta os pixels que ele cobre.</dd>
+        <dt>Velocidade</dt><dd>Dezenas de quadros por segundo, até no celular.</dd>
+        <dt>Realismo</dt><dd>Reflexos, sombras e vidro são <b>aproximações</b>, feitas com mapas de ambiente, mapas de sombra e truques de shader.</dd>
+        <dt>Limite</dt><dd>Um objeto não "enxerga" o outro: a esfera de metal não reflete as bolinhas ao redor.</dd>
+      </dl>
     </div>
-    <div class="cartao">
-      <h3 style="color:var(--laranja)">Ray tracing (este projeto)</h3>
-      <ul>
-        <li>Dispara raios da câmera e segue a luz quicando pela cena.</li>
-        <li>Lento: cada imagem leva segundos ou minutos.</li>
-        <li>Reflexos, refração e sombras suaves <b>surgem sozinhos</b> da física, sem truques.</li>
-        <li>Luz colorida "vaza" de um objeto para o outro (iluminação global).</li>
-      </ul>
+    <div class="cartao" style="--cor:var(--ray)">
+      <h3>Ray tracing</h3>
+      <p class="meta">C++17 · este projeto</p>
+      <dl>
+        <dt>Como</dt><dd>Dispara raios da câmera e segue a luz quicando pela cena.</dd>
+        <dt>Velocidade</dt><dd>Segundos ou minutos por imagem.</dd>
+        <dt>Realismo</dt><dd>Reflexos, refração e sombras suaves <b>surgem sozinhos</b> da física, sem truques.</dd>
+        <dt>Bônus</dt><dd>A luz colorida "vaza" de um objeto para o outro (iluminação global).</dd>
+      </dl>
     </div>
   </div>
 </section>
 
 <section>
-  <h2>Como as duas versões mostram a mesma cena</h2>
-  <p>O programa em C++ exporta as cenas para um arquivo, e esta página lê esse arquivo e monta tudo com Three.js:</p>
-  <p><code>raytracer --exportar docs/cenas.json</code></p>
-  <table>
-    <thead><tr><th>No ray tracer (C++)</th><th>Aqui (Three.js)</th></tr></thead>
-    <tbody>
-      <tr><td><code>Difuso</code></td><td><code>MeshStandardMaterial</code> com rugosidade máxima</td></tr>
-      <tr><td><code>Metal</code> + rugosidade</td><td><code>MeshStandardMaterial</code> metálico + mapa de ambiente</td></tr>
-      <tr><td><code>Vidro</code> + índice de refração</td><td><code>MeshPhysicalMaterial</code> com <code>transmission</code> e <code>ior</code></td></tr>
-      <tr><td><code>Luz</code></td><td>esfera brilhante + <code>PointLight</code></td></tr>
-      <tr><td>Céu em degradê</td><td>textura de fundo usada também como luz ambiente (IBL) + sol fraco para as sombras</td></tr>
-    </tbody>
-  </table>
+  <h2>Uma cena, duas versões</h2>
+  <p class="sub">O programa em C++ exporta as cenas para um arquivo JSON. Esta página lê esse arquivo e monta cada objeto com o material equivalente do Three.js.</p>
+  <span class="comando">raytracer --exportar docs/cenas.json</span>
+  <div class="tabela">
+    <table>
+      <thead><tr><th>Ray tracer (C++)</th><th>Three.js</th></tr></thead>
+      <tbody>
+        <tr><td><code>Difuso</code></td><td><code>MeshStandardMaterial</code> com rugosidade máxima</td></tr>
+        <tr><td><code>Metal</code> + rugosidade</td><td><code>MeshStandardMaterial</code> metálico + mapa de ambiente</td></tr>
+        <tr><td><code>Vidro</code> + índice de refração</td><td><code>MeshPhysicalMaterial</code> com <code>transmission</code> e <code>ior</code></td></tr>
+        <tr><td><code>Luz</code></td><td>Esfera emissiva + <code>PointLight</code></td></tr>
+        <tr><td>Céu em degradê</td><td>Textura de fundo usada também como luz ambiente (IBL) + sol fraco para as sombras</td></tr>
+      </tbody>
+    </table>
+  </div>
 </section>
 
-</div>
-
-<footer>
-  Feito por <a href="https://github.com/b4el">Gabriel Leandro</a> ·
-  <a href="https://github.com/b4el/ray-tracer">código no GitHub</a> ·
-  <a href="https://github.com/b4el/ray-tracer/tree/main/tutorial">tutorial para iniciantes</a>
+<footer class="site">
+  <span>Feito por <a href="https://github.com/b4el">Gabriel Leandro</a></span>
+  <span><a href="https://github.com/b4el/ray-tracer">Código no GitHub</a> · <a href="https://github.com/b4el/ray-tracer/tree/main/tutorial">Tutorial para iniciantes</a></span>
 </footer>
+
+</div>
 
 <script type="module">
 import * as THREE from "three";
@@ -221,30 +304,30 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 // Informações das imagens geradas pelo ray tracer (docs/*.png)
 const RENDERS = {
-  capa:    { img: "capa.png",    info: "1200×675 · 150 amostras/pixel", tempo: "~1 min em 2 núcleos",
-             observe: "Repare na <b>esfera de metal</b> da frente: no ray tracer ela reflete todas as bolinhas coloridas; no Three.js ela só reflete o céu. E a esfera de vidro do meio mostra a cena <b>de cabeça para baixo</b>, como uma lente de verdade." },
-  simples: { img: "simples.png", info: "800×450 · 200 amostras/pixel", tempo: "~9 s em 2 núcleos",
-             observe: "A esfera da esquerda é <b>vidro oco</b> (uma bolha de ar dentro do vidro). Compare as <b>sombras</b>: no ray tracer elas são suaves e somem aos poucos; em tempo real, vêm de um mapa de sombras." },
-  noite:   { img: "noite.png",   info: "800×450 · 600 amostras/pixel", tempo: "~21 s em 2 núcleos",
-             observe: "Sem céu, só as lâmpadas iluminam. No ray tracer, a <b>luz azul</b> tinge o chão e aparece dentro do vidro, e a esfera cromada reflete as duas lâmpadas. O \"chuvisco\" é ruído de Monte Carlo: mais amostras, menos ruído." },
+  capa:    { img: "capa.png",    info: "1200×675 px · 150 amostras por pixel", tempo: "~1 min",
+             observe: "Olhe a <b>esfera de metal</b> da frente: no ray tracer ela reflete as bolinhas coloridas; no Three.js, só o céu. E a esfera de vidro do meio mostra a cena <b>de cabeça para baixo</b>, como uma lente de verdade." },
+  simples: { img: "simples.png", info: "800×450 px · 200 amostras por pixel", tempo: "~9 s",
+             observe: "A esfera da esquerda é <b>vidro oco</b>, uma bolha de ar dentro do vidro, que o Three.js não consegue simular. Compare também as <b>sombras</b>: no ray tracer elas se espalham suavemente." },
+  noite:   { img: "noite.png",   info: "800×450 px · 600 amostras por pixel", tempo: "~21 s",
+             observe: "Sem céu, só as lâmpadas iluminam. No ray tracer, a <b>luz azul</b> tinge o chão e aparece dentro do vidro, e a esfera cromada reflete as lâmpadas. O granulado é ruído de Monte Carlo: mais amostras, menos ruído." },
 };
 
 const tela = document.getElementById("tela3d");
 const wrap = document.getElementById("telaWrap");
-const aviso = document.getElementById("aviso");
+const estado = document.getElementById("estado");
 
-function mostrarAviso(html) { aviso.innerHTML = `<div>${html}</div>`; aviso.classList.add("visivel"); }
+function mostrarEstado(html) { estado.innerHTML = `<div>${html}</div>`; estado.classList.remove("oculto"); }
 
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas: tela, antialias: true });
 } catch (e) {
-  mostrarAviso("Seu navegador não conseguiu iniciar o WebGL, então a parte em tempo real não pode ser exibida.");
+  mostrarEstado("Seu navegador não conseguiu iniciar o WebGL, então a versão em tempo real não pode ser exibida.");
   throw e;
 }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.NoToneMapping;  // o ray tracer tambem nao usa tone mapping
+renderer.toneMapping = THREE.NoToneMapping;  // o ray tracer também não usa tone mapping
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -261,9 +344,9 @@ function criarCeu() {
   const L = 8, A = 256;
   const dados = new Float32Array(L * A * 4);
   for (let y = 0; y < A; y++) {
-    const latitude = (y / (A - 1) - 0.5) * Math.PI;   // de -90° a +90°
+    const latitude = (y / (A - 1) - 0.5) * Math.PI;
     const a = 0.5 * (Math.sin(latitude) + 1);
-    const r = (1 - a) * 1 + a * 0.5, g = (1 - a) * 1 + a * 0.7, b = 1;
+    const r = (1 - a) + a * 0.5, g = (1 - a) + a * 0.7, b = 1;
     for (let x = 0; x < L; x++) dados.set([r, g, b, 1], (y * L + x) * 4);
   }
   const tex = new THREE.DataTexture(dados, L, A, THREE.RGBAFormat, THREE.FloatType);
@@ -302,9 +385,9 @@ function montarCena(nome) {
 
   if (d.ceu) {
     cena.background = texturaCeu;
-    cena.environment = ambienteCeu;  // o proprio ceu ilumina a cena (como no ray tracer)
+    cena.environment = ambienteCeu;  // o próprio céu ilumina a cena (como no ray tracer)
     cena.environmentIntensity = 0.85;
-    const sol = new THREE.DirectionalLight(0xffffff, 0.6);  // so para gerar sombras
+    const sol = new THREE.DirectionalLight(0xffffff, 0.6);  // só para gerar sombras
     sol.position.set(6, 14, 6);
     sol.castShadow = true;
     sol.shadow.mapSize.set(2048, 2048);
@@ -365,8 +448,8 @@ function trocarCena(nome) {
   document.getElementById("imgRT").src = r.img;
   document.getElementById("imgSobreposta").src = r.img;
   document.getElementById("infoRT").textContent = r.info;
-  document.getElementById("tempoRT").textContent = "Tempo de renderização: " + r.tempo;
-  document.getElementById("observe").innerHTML = "👀 " + r.observe;
+  document.getElementById("tempoRT").textContent = r.tempo + " por imagem";
+  document.getElementById("observe").innerHTML = r.observe;
   for (const b of document.querySelectorAll("[data-cena]")) b.setAttribute("aria-pressed", String(b.dataset.cena === nome));
 }
 
@@ -400,6 +483,11 @@ document.getElementById("resetar").addEventListener("click", resetarCamera);
 const comparacao = document.getElementById("comparacao");
 const faixa = document.getElementById("faixaSlider");
 const dica = document.getElementById("dica");
+const rotuloPainel = document.getElementById("rotuloPainel");
+const toque = window.matchMedia("(pointer: coarse)").matches;
+const DICA_GIRAR = toque ? "Arraste para girar · pinça para dar zoom" : "Arraste para girar · role para dar zoom";
+const DICA_SLIDER = toque ? "Arraste sobre a imagem para mover o divisor" : "Arraste sobre a imagem (ou use ← →) para mover o divisor";
+dica.textContent = DICA_GIRAR;
 
 function definirCorte(pct) {
   pct = Math.min(100, Math.max(0, pct));
@@ -411,7 +499,10 @@ function trocarModo(modo) {
   const slider = modo === "slider";
   comparacao.classList.toggle("slider", slider);
   controles.enabled = !slider;
-  dica.textContent = slider ? "Arraste sobre a imagem para mover o divisor" : "Arraste para girar · role para dar zoom";
+  dica.textContent = slider ? DICA_SLIDER : DICA_GIRAR;
+  rotuloPainel.innerHTML = slider
+    ? '<i style="background:var(--raster)"></i>Three.js <span style="color:var(--texto-3)">×</span> <i style="background:var(--ray)"></i>Ray tracer'
+    : '<i style="background:var(--raster)"></i>Rasterização · Three.js';
   if (slider) { resetarCamera(); definirCorte(50); }
   for (const b of document.querySelectorAll("[data-modo]")) b.setAttribute("aria-pressed", String(b.dataset.modo === modo));
 }
@@ -425,7 +516,7 @@ const moverDivisor = (ev) => {
 };
 wrap.addEventListener("pointerdown", (ev) => {
   if (!comparacao.classList.contains("slider")) return;
-  arrastando = true; wrap.setPointerCapture(ev.pointerId); moverDivisor(ev);
+  arrastando = true; wrap.setPointerCapture(ev.pointerId); moverDivisor(ev); faixa.focus({ preventScroll: true });
 });
 wrap.addEventListener("pointermove", (ev) => { if (arrastando) moverDivisor(ev); });
 wrap.addEventListener("pointerup", () => { arrastando = false; });
@@ -436,10 +527,11 @@ try {
   if (!resp.ok) throw new Error(resp.status);
   dadosCenas = await resp.json();
   trocarCena("capa");
+  estado.classList.add("oculto");
 } catch (e) {
-  mostrarAviso("Não foi possível carregar <code>cenas.json</code>.<br>Se você abriu o arquivo direto do computador, " +
-               "rode um servidor local na pasta <code>docs</code> (por exemplo <code>python -m http.server</code>) " +
-               "e acesse <code>http://localhost:8000</code>.");
+  mostrarEstado("Não foi possível carregar <code>cenas.json</code>.<br>Se você abriu o arquivo direto do computador, " +
+                "rode um servidor local na pasta <code>docs</code> (por exemplo <code>python -m http.server</code>) " +
+                "e acesse <code>http://localhost:8000</code>.");
 }
 </script>
 </body>
