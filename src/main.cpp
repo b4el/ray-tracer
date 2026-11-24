@@ -21,17 +21,19 @@ struct Opcoes {
     int profundidade = 20;
     int threads = 0;
     std::string exportar;  // se preenchido, so exporta as cenas em JSON
+    bool semBVH = false;   // desliga a BVH (para comparar o desempenho)
 };
 
 void mostrarAjuda() {
     std::cout << "Uso: raytracer [opcoes]\n\n"
-              << "  --cena NOME         capa | simples | noite  (padrao: capa)\n"
+              << "  --cena NOME         capa | simples | noite | modelos  (padrao: capa)\n"
               << "  --saida ARQUIVO     .bmp ou .ppm            (padrao: imagem.bmp)\n"
               << "  --largura N         largura em pixels       (padrao: 800)\n"
               << "  --amostras N        amostras por pixel      (padrao: 50)\n"
               << "  --profundidade N    reflexoes por raio      (padrao: 20)\n"
               << "  --threads N         0 = todos os nucleos    (padrao: 0)\n"
               << "  --exportar ARQUIVO  salva as cenas em JSON (para a pagina com Three.js)\n"
+              << "  --sem-bvh           desliga a BVH (para medir o ganho de desempenho)\n"
               << "  --ajuda             mostra esta mensagem\n";
 }
 
@@ -53,6 +55,10 @@ Opcoes lerOpcoes(int argc, char* argv[]) {
         if (arg == "--ajuda" || arg == "-h") {
             mostrarAjuda();
             std::exit(0);
+        }
+        if (arg == "--sem-bvh") {  // opcao sem valor
+            op.semBVH = true;
+            continue;
         }
         if (i + 1 >= argc) throw std::invalid_argument("Faltou o valor de " + arg);
         std::string valor = argv[++i];
@@ -90,12 +96,12 @@ int main(int argc, char* argv[]) {
         cfg.profundidadeMaxima = op.profundidade;
         cfg.threads = op.threads;
 
-        CenaPronta cena = montarCena(op.cena);
+        CenaPronta cena = montarCena(op.cena, !op.semBVH);
         cfg.ceu = cena.ceu;
         Camera camera(cena.camera, static_cast<double>(cfg.largura) / cfg.altura);
 
         std::cout << "Cena: " << op.cena << " | " << cfg.largura << "x" << cfg.altura << " | " << cfg.amostrasPorPixel
-                  << " amostras\n";
+                  << " amostras" << (op.semBVH ? " | sem BVH" : "") << "\n";
 
         auto inicio = std::chrono::steady_clock::now();
         Imagem imagem = renderizar(*cena.mundo, camera, cfg);

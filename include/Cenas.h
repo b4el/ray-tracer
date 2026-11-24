@@ -24,17 +24,27 @@ struct DescricaoEsfera {
     DescricaoMaterial material;
 };
 
+// Um modelo 3D lido de modelos/<arquivo> (formato .obj)
+struct DescricaoMalha {
+    std::string arquivo;
+    Vec3 deslocamento;  // onde o modelo fica na cena
+    double escala = 1;
+    DescricaoMaterial material;
+};
+
 // Uma cena pronta: objetos + posicao da camera + se tem ceu
 struct CenaPronta {
     std::string nome;
     std::vector<DescricaoEsfera> esferas;
+    std::vector<DescricaoMalha> malhas;
     std::shared_ptr<Objeto> mundo;
     ConfigCamera camera;
     bool ceu = true;
 };
 
-// Nomes aceitos: "capa", "simples", "noite"
-CenaPronta montarCena(const std::string& nome);
+// Nomes aceitos: "capa", "simples", "noite", "modelos".
+// usarBVH = false monta uma lista simples (para medir o ganho da BVH).
+CenaPronta montarCena(const std::string& nome, bool usarBVH = true);
 std::vector<std::string> nomesDasCenas();
 
 // Salva todas as cenas em um arquivo JSON

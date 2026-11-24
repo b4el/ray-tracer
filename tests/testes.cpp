@@ -12,7 +12,9 @@
 #include "Cena.h"
 #include "Esfera.h"
 #include "Imagem.h"
+#include "Malha.h"
 #include "Material.h"
+#include "Triangulo.h"
 
 static int falhas = 0;
 
@@ -120,6 +122,53 @@ void testaBMP() {
     std::remove("teste_tmp.bmp");
 }
 
+void testaTriangulo() {
+    auto mat = std::make_shared<Difuso>(Cor(1, 1, 1));
+    // Triangulo no plano z = -2, cobrindo a origem
+    Triangulo tri(Ponto3(-1, -1, -2), Ponto3(1, -1, -2), Ponto3(0, 1, -2), mat);
+    Impacto imp;
+    CHECK(tri.atinge(Raio{{0, 0, 0}, {0, 0, -1}}, Intervalo(0.001, 1e9), imp));
+    CHECK(perto(imp.t, 2));
+    CHECK(perto(imp.normal.z, 1));               // normal virada para a camera
+    CHECK(!tri.atinge(Raio{{5, 0, 0}, {0, 0, -1}}, Intervalo(0.001, 1e9), imp));  // passa ao lado
+    CHECK(!tri.atinge(Raio{{0, 0, 0}, {1, 0, 0}}, Intervalo(0.001, 1e9), imp));   // paralelo
+    CHECK(!tri.atinge(Raio{{0, 0, 0}, {0, 0, -1}}, Intervalo(0.001, 1.5), imp));  // alem do limite
+}
+
+void testaTrianguloSuave() {
+    auto mat = std::make_shared<Difuso>(Cor(1, 1, 1));
+    // Normais dos vertices inclinadas: no centro, a normal interpolada aponta reto
+    Triangulo tri(Ponto3(-1, -1, -2), Ponto3(1, -1, -2), Ponto3(0, 1, -2),
+                  Vec3(-1, -1, 2), Vec3(1, -1, 2), Vec3(0, 1.4142, 2), mat);
+    Impacto imp;
+    CHECK(tri.atinge(Raio{{0, -1.0 / 3, 0}, {0, 0, -1}}, Intervalo(0.001, 1e9), imp));
+    CHECK(imp.normal.z > 0.9);
+}
+
+void testaLeituraOBJ() {
+    // Um quadrado (4 vertices, 1 face de 4 lados) vira 2 triangulos
+    DadosMalha m = lerOBJ(
+        "# comentario\n"
+        "v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\n"
+        "vn 0 0 1\n"
+        "o qualquer\n"
+        "f 1//1 2//1 3//1 4//1\n"
+        "f -4 -3 -2\n");  // indices negativos contam do fim
+    CHECK(m.vertices.size() == 4);
+    CHECK(m.normais.size() == 1);
+    CHECK(m.faces.size() == 3);
+    CHECK(m.faces[1].v[0] == 0 && m.faces[1].v[1] == 2 && m.faces[1].v[2] == 3);
+    CHECK(m.faces[0].n[0] == 0);
+    CHECK(m.faces[2].v[0] == 0 && m.faces[2].n[0] == -1);
+
+    auto tris = criarTriangulos(m, Vec3(0, 0, -5), 2.0, std::make_shared<Difuso>(Cor(1, 1, 1)));
+    CHECK(tris.size() == 3);
+
+    bool lancou = false;
+    try { lerOBJ("v 0 0 0\nf 1 2 3\n"); } catch (const std::exception&) { lancou = true; }
+    CHECK(lancou);  // indice que nao existe
+}
+
 int main() {
     testaVetores();
     testaRefracaoSemMudarDeMeio();
@@ -129,6 +178,9 @@ int main() {
     testaCaixa();
     testaCorParaByte();
     testaBMP();
+    testaTriangulo();
+    testaTrianguloSuave();
+    testaLeituraOBJ();
 
     if (falhas == 0) {
         std::cout << "Todos os testes passaram!\n";

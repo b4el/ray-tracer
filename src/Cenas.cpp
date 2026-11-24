@@ -9,6 +9,7 @@
 #include "BVH.h"
 #include "Cena.h"
 #include "Esfera.h"
+#include "Malha.h"
 #include "Material.h"
 
 namespace {
@@ -32,12 +33,18 @@ std::shared_ptr<Material> criarMaterial(const DescricaoMaterial& d) {
 
 // Transforma as descricoes em objetos de verdade.
 // Com muitos objetos, usa a BVH; com poucos, uma lista simples basta.
-void construirMundo(CenaPronta& cena) {
+void construirMundo(CenaPronta& cena, bool usarBVH) {
     std::vector<std::shared_ptr<Objeto>> objetos;
     for (const DescricaoEsfera& e : cena.esferas)
         objetos.push_back(std::make_shared<Esfera>(e.centro, e.raio, criarMaterial(e.material)));
 
-    if (objetos.size() > 16) {
+    for (const DescricaoMalha& m : cena.malhas) {
+        DadosMalha dados = carregarOBJ("modelos/" + m.arquivo);
+        auto triangulos = criarTriangulos(dados, m.deslocamento, m.escala, criarMaterial(m.material));
+        objetos.insert(objetos.end(), triangulos.begin(), triangulos.end());
+    }
+
+    if (usarBVH && objetos.size() > 16) {
         cena.mundo = std::make_shared<NoBVH>(objetos);
     } else {
         auto lista = std::make_shared<Cena>();
@@ -124,6 +131,27 @@ CenaPronta cenaNoite() {
     return c;
 }
 
+// Modelos 3D (.obj): no toroidal de vidro, gema dourada e esferas
+CenaPronta cenaModelos() {
+    CenaPronta c;
+    c.esferas = {
+        {{0, -1000, 0}, 1000, difuso({0.45, 0.47, 0.5})},
+        {{2.6, 0.6, 0.9}, 0.6, difuso({0.75, 0.15, 0.2})},
+        {{-1.4, 0.3, 1.9}, 0.3, metal({0.85, 0.85, 0.9}, 0.0)},
+        {{1.3, 0.25, 2.1}, 0.25, vidro(1.5)},
+    };
+    c.malhas = {
+        {"no_toroidal.obj", {0, 0, 0}, 2.4, vidro(1.5)},
+        {"gema.obj", {-2.6, 0, 0.4}, 1.5, metal({1.0, 0.72, 0.3}, 0.02)},
+    };
+    c.camera.posicao = {0, 2.6, 8};
+    c.camera.alvo = {0, 0.8, 0};
+    c.camera.campoDeVisao = 35;
+    c.camera.abertura = 0.04;
+    c.camera.distanciaFoco = 8;
+    return c;
+}
+
 const char* nomeDoTipo(Tipo t) {
     switch (t) {
         case Tipo::Difuso: return "difuso";
@@ -138,17 +166,18 @@ void escreverVetor(std::ostream& os, const Vec3& v) { os << '[' << v.x << ", " <
 
 }  // namespace
 
-std::vector<std::string> nomesDasCenas() { return {"capa", "simples", "noite"}; }
+std::vector<std::string> nomesDasCenas() { return {"capa", "simples", "noite", "modelos"}; }
 
-CenaPronta montarCena(const std::string& nome) {
+CenaPronta montarCena(const std::string& nome, bool usarBVH) {
     CenaPronta c;
     if (nome == "capa") c = cenaCapa();
     else if (nome == "simples") c = cenaSimples();
     else if (nome == "noite") c = cenaNoite();
+    else if (nome == "modelos") c = cenaModelos();
     else throw std::invalid_argument("Cena desconhecida: " + nome);
 
     c.nome = nome;
-    construirMundo(c);
+    construirMundo(c, usarBVH);
     return c;
 }
 
@@ -178,6 +207,16 @@ void exportarCenasJSON(const std::string& caminho) {
             escreverVetor(os, e.material.cor);
             os << ", \"rugosidade\": " << e.material.rugosidade << ", \"indice\": " << e.material.indice << " }"
                << (j + 1 < c.esferas.size() ? "," : "") << "\n";
+        }
+        os << "    ],\n    \"malhas\": [\n";
+        for (size_t j = 0; j < c.malhas.size(); j++) {
+            const DescricaoMalha& m = c.malhas[j];
+            os << "      { \"arquivo\": \"modelos/" << m.arquivo << "\", \"deslocamento\": ";
+            escreverVetor(os, m.deslocamento);
+            os << ", \"escala\": " << m.escala << ", \"material\": \"" << nomeDoTipo(m.material.tipo) << "\", \"cor\": ";
+            escreverVetor(os, m.material.cor);
+            os << ", \"rugosidade\": " << m.material.rugosidade << ", \"indice\": " << m.material.indice << " }"
+               << (j + 1 < c.malhas.size() ? "," : "") << "\n";
         }
         os << "    ]\n  }" << (i + 1 < nomes.size() ? "," : "") << "\n";
     }

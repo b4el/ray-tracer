@@ -488,6 +488,8 @@
       { "centro": [0, 1, 0], "raio": 1, "material": "vidro", "cor": [1, 1, 1], "rugosidade": 0, "indice": 1.5 },
       { "centro": [-4, 1, 0], "raio": 1, "material": "difuso", "cor": [1, 0.54, 0.12], "rugosidade": 0, "indice": 1.5 },
       { "centro": [4, 1, 0], "raio": 1, "material": "metal", "cor": [0.7, 0.6, 0.5], "rugosidade": 0, "indice": 1.5 }
+    ],
+    "malhas": [
     ]
   },
   "simples": {
@@ -499,6 +501,8 @@
       { "centro": [-1, 0, -1], "raio": 0.5, "material": "vidro", "cor": [1, 1, 1], "rugosidade": 0, "indice": 1.5 },
       { "centro": [-1, 0, -1], "raio": 0.4, "material": "vidro", "cor": [1, 1, 1], "rugosidade": 0, "indice": 0.666667 },
       { "centro": [1, 0, -1], "raio": 0.5, "material": "metal", "cor": [0.8, 0.6, 0.2], "rugosidade": 0.1, "indice": 1.5 }
+    ],
+    "malhas": [
     ]
   },
   "noite": {
@@ -511,6 +515,22 @@
       { "centro": [2.2, 0.7, -0.6], "raio": 0.7, "material": "difuso", "cor": [0.2, 0.6, 0.9], "rugosidade": 0, "indice": 1.5 },
       { "centro": [0, 5, 3], "raio": 1.6, "material": "luz", "cor": [5, 3.6, 2], "rugosidade": 0, "indice": 1.5 },
       { "centro": [-3.5, 1.2, -2.5], "raio": 0.6, "material": "luz", "cor": [1.5, 3, 7], "rugosidade": 0, "indice": 1.5 }
+    ],
+    "malhas": [
+    ]
+  },
+  "modelos": {
+    "ceu": true,
+    "camera": { "posicao": [0, 2.6, 8], "alvo": [0, 0.8, 0], "campoDeVisao": 35 },
+    "esferas": [
+      { "centro": [0, -1000, 0], "raio": 1000, "material": "difuso", "cor": [0.45, 0.47, 0.5], "rugosidade": 0, "indice": 1.5 },
+      { "centro": [2.6, 0.6, 0.9], "raio": 0.6, "material": "difuso", "cor": [0.75, 0.15, 0.2], "rugosidade": 0, "indice": 1.5 },
+      { "centro": [-1.4, 0.3, 1.9], "raio": 0.3, "material": "metal", "cor": [0.85, 0.85, 0.9], "rugosidade": 0, "indice": 1.5 },
+      { "centro": [1.3, 0.25, 2.1], "raio": 0.25, "material": "vidro", "cor": [1, 1, 1], "rugosidade": 0, "indice": 1.5 }
+    ],
+    "malhas": [
+      { "arquivo": "modelos/no_toroidal.obj", "deslocamento": [0, 0, 0], "escala": 2.4, "material": "vidro", "cor": [1, 1, 1], "rugosidade": 0, "indice": 1.5 },
+      { "arquivo": "modelos/gema.obj", "deslocamento": [-2.6, 0, 0.4], "escala": 1.5, "material": "metal", "cor": [1, 0.72, 0.3], "rugosidade": 0.02, "indice": 1.5 }
     ]
   }
 }

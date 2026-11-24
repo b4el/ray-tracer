@@ -22,8 +22,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/simples.png" alt="Glass, matte and gold spheres" width="445">
-  <img src="docs/noite.png" alt="Night scene lit only by light sources" width="445">
+  <img src="docs/modelos.png" alt="Glass torus knot and gold gem loaded from .obj files" width="296">
+  <img src="docs/simples.png" alt="Glass, matte and gold spheres" width="296">
+  <img src="docs/noite.png" alt="Night scene lit only by light sources" width="296">
 </p>
 
 ---
@@ -36,13 +37,14 @@
 
 | | |
 |---|---|
+| 🔺 **Triangles & 3D models** | Ray-triangle intersection (Möller–Trumbore), an `.obj` loader (polygons, negative indices, smooth vertex normals) and procedurally generated models |
 | 🎨 **Materials** | Matte (Lambertian), metal with adjustable roughness, glass with refraction (Snell + Schlick) and light sources |
 | 📷 **Camera** | Free position and target, adjustable field of view and **depth of field** (lens blur) |
 | ⚡ **Multithreading** | Splits image rows across every CPU core using `std::thread` and `std::atomic` |
 | 🌳 **BVH** | Bounding Volume Hierarchy that cuts the cost of each ray from O(n) to roughly O(log n) |
 | 🖼️ **Output** | 24-bit BMP (opens natively on Windows) or PPM, written by hand byte by byte |
 | 🌐 **Web comparison** | [Interactive page](https://b4el.github.io/ray-tracer/) that rebuilds the same scenes in Three.js (rasterization) next to the ray-traced result, with an overlay slider |
-| 🧪 **Tests** | Tests for vectors, intersections, the BVH (checked against brute force) and the BMP format, running in CI |
+| 🧪 **Tests** | Tests for vectors, sphere and triangle intersections, the `.obj` parser, the BVH (checked against brute force) and the BMP format, running in CI |
 
 ## 🚀 Getting started
 
@@ -72,15 +74,39 @@ The command-line flags are in Portuguese; here is what each one does:
 
 | Flag | Meaning | Default |
 |---|---|---|
-| `--cena` | scene: `capa` (cover), `simples` (simple) or `noite` (night) | `capa` |
+| `--cena` | scene: `capa` (cover), `simples` (simple), `noite` (night) or `modelos` (3D models) | `capa` |
 | `--saida` | output file, `.bmp` or `.ppm` | `imagem.bmp` |
 | `--largura` | image width in pixels (height follows 16:9) | `800` |
 | `--amostras` | samples (rays) per pixel: more = less noise, slower | `50` |
 | `--profundidade` | maximum number of bounces per ray | `20` |
 | `--threads` | number of threads; `0` uses every core | `0` |
 | `--exportar` | export the scenes as JSON (used by the web page) and exit | — |
+| `--sem-bvh` | turn the BVH off, to measure how much it helps | off |
 
 The cover image above (1200×675, 150 samples per pixel) takes about 1 minute on 2 cores.
+
+## ⚡ Performance
+
+Measured on a 2-core machine with `--threads` and `--sem-bvh` (Release build):
+
+| Scene | Objects | Without BVH | With BVH | Speedup |
+|---|---|---|---|---|
+| `modelos` (320×180, 4 samples) | 9,600+ triangles + 4 spheres | 22.6 s | **0.15 s** | **~150×** |
+| `capa` (400×225, 10 samples) | 485 spheres | 2.30 s | **0.50 s** | **~4.6×** |
+
+| Threads (`capa`, with BVH) | Time | Speedup |
+|---|---|---|
+| 1 | 0.98 s | 1× |
+| 2 | **0.50 s** | **~2×** (scales linearly with cores) |
+
+Without a BVH, every ray is tested against every object, so the cost grows with the size of the scene. With it, a ray skips whole groups of objects whose bounding box it misses, which is why the gain is so much bigger for the 9,600-triangle model.
+
+Try it yourself:
+
+```bash
+./build/raytracer --cena modelos --largura 320 --amostras 4
+./build/raytracer --cena modelos --largura 320 --amostras 4 --sem-bvh
+```
 
 ## 🧠 How it works
 
@@ -108,6 +134,8 @@ ray-tracer/
 │   ├── Vec3.h        # 3D vector: dot/cross products, reflection and refraction
 │   ├── Objeto.h      # Abstract interface for anything a ray can hit
 │   ├── Esfera.h      # Ray-sphere intersection (quadratic equation)
+│   ├── Triangulo.h   # Ray-triangle intersection (Möller–Trumbore)
+│   ├── Malha.h       # .obj loader
 │   ├── Cena.h        # List of objects (Composite pattern)
 │   ├── BVH.h         # Acceleration tree of bounding boxes
 │   ├── Caixa.h       # AABB and the slab test
@@ -115,6 +143,8 @@ ray-tracer/
 │   ├── Camera.h      # Camera with focus and lens blur
 │   └── ...
 ├── src/              # Implementations + main.cpp (command line)
+├── modelos/          # 3D models (.obj)
+├── ferramentas/      # Python script that generates the models
 ├── tests/            # Automated tests
 ├── tutorial/         # 6-stage beginner tutorial
 └── docs/             # Comparison page (Three.js), cenas.json and images
@@ -126,18 +156,20 @@ ray-tracer/
 - **Modern C++:** `std::shared_ptr`, lambdas, `constexpr`, `thread_local`, operator overloading
 - **Concurrency:** `std::thread`, `std::atomic` and `std::mutex`
 - **Data structures:** a binary tree (BVH) built recursively
-- **Applied math:** linear algebra, quadratic equations, Snell's law and Monte Carlo sampling
+- **Applied math:** linear algebra, quadratic equations, barycentric coordinates, Snell's law and Monte Carlo sampling
+- **File parsing:** a tolerant `.obj` reader with clear error messages
 - **Engineering:** CMake, automated tests and continuous integration with GitHub Actions
 - **Web:** Three.js, WebGL and GitHub Pages, reading scenes exported by the C++ program
 
 ## 🔭 Roadmap
 
-- [ ] New shapes: planes, triangles and `.obj` meshes
-- [ ] Textures (checkerboard, images)
+- [x] Triangles and `.obj` meshes
+- [ ] Planes and textures (checkerboard, images)
 - [ ] PNG output
 - [ ] Load scenes from a file (export already works; import is next)
 - [ ] In-browser scene editor with Three.js
 - [ ] Real-time preview window
+- [ ] Run the ray tracer in the browser with WebAssembly
 
 ## 📖 References
 

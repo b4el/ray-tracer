@@ -25,14 +25,23 @@ add_library(raytracer_core
     src/Cenas.cpp
     src/Esfera.cpp
     src/Imagem.cpp
+    src/Malha.cpp
     src/Material.cpp
     src/Renderizador.cpp
+    src/Triangulo.cpp
 )
 target_include_directories(raytracer_core PUBLIC include)
 target_link_libraries(raytracer_core PUBLIC Threads::Threads)
 
 add_executable(raytracer src/main.cpp)
 target_link_libraries(raytracer PRIVATE raytracer_core)
+
+# Copia os modelos 3D para perto do executavel (o Visual Studio roda o programa dali)
+add_custom_command(TARGET raytracer POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/modelos
+            $<TARGET_FILE_DIR:raytracer>/modelos
+)
 
 # Testes
 enable_testing()

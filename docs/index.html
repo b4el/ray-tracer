@@ -197,6 +197,7 @@
       <button data-cena="capa" aria-pressed="true">Cover</button>
       <button data-cena="simples" aria-pressed="false">Simple</button>
       <button data-cena="noite" aria-pressed="false">Night</button>
+      <button data-cena="modelos" aria-pressed="false">Models</button>
     </div>
   </div>
   <div class="campo direita">
@@ -285,6 +286,7 @@
         <tr><td><code>Metal</code> + roughness</td><td>Metallic <code>MeshStandardMaterial</code> + environment map</td></tr>
         <tr><td><code>Vidro</code> (glass) + refractive index</td><td><code>MeshPhysicalMaterial</code> with <code>transmission</code> and <code>ior</code></td></tr>
         <tr><td><code>Luz</code> (light)</td><td>Emissive sphere + <code>PointLight</code></td></tr>
+        <tr><td><code>.obj</code> models (triangles)</td><td>The same files, loaded with <code>OBJLoader</code></td></tr>
         <tr><td>Gradient sky</td><td>Background texture also used as ambient lighting (IBL) + a dim sun for shadows</td></tr>
       </tbody>
     </table>
@@ -301,6 +303,7 @@
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 // Informações das imagens geradas pelo ray tracer (docs/*.png)
 const RENDERS = {
@@ -308,6 +311,8 @@ const RENDERS = {
              observe: "Look at the <b>metal sphere</b> in front: in the ray tracer it reflects the colorful balls; in Three.js, only the sky. And the glass sphere in the middle shows the scene <b>upside down</b>, just like a real lens." },
   simples: { img: "simples.png", info: "800×450 px · 200 samples per pixel", tempo: "~9 s",
              observe: "The sphere on the left is <b>hollow glass</b>, an air bubble inside glass, which Three.js cannot simulate. Also compare the <b>shadows</b>: in the ray tracer they fade out smoothly." },
+  modelos: { img: "modelos.png", info: "1200×675 px · 150 samples per pixel · 9,600+ triangles", tempo: "~1 min",
+             observe: "Two <b>3D models</b> loaded from <code>.obj</code> files by both versions: a glass <b>torus knot</b> with 9,600 triangles and a gold <b>gem</b>. In the ray tracer the knot bends the floor and the red ball seen through it; in Three.js, the glass only blurs what is behind it." },
   noite:   { img: "noite.png",   info: "800×450 px · 600 samples per pixel", tempo: "~21 s",
              observe: "No sky here, only the lamps light the scene. In the ray tracer, the <b>blue light</b> tints the floor and shows up inside the glass, and the chrome sphere reflects both lamps. The grain is Monte Carlo noise: more samples, less noise." },
 };
@@ -359,6 +364,7 @@ function criarCeu() {
 const texturaCeu = criarCeu();
 const ambienteCeu = pmrem.fromEquirectangular(texturaCeu).texture;
 
+const carregadorOBJ = new OBJLoader();
 const corLinear = (c) => new THREE.Color().setRGB(c[0], c[1], c[2], THREE.LinearSRGBColorSpace);
 
 function criarMaterial(e, ceu) {
@@ -367,7 +373,7 @@ function criarMaterial(e, ceu) {
       return new THREE.MeshStandardMaterial({ color: corLinear(e.cor), metalness: 1, roughness: Math.max(e.rugosidade, 0.04) });
     case "vidro":
       return new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0, transmission: 1,
-        ior: e.indice, thickness: e.raio * 2, specularIntensity: 1, envMapIntensity: ceu ? 1 : 0.3 });
+        ior: e.indice, thickness: (e.raio ?? e.escala * 0.2) * 2, specularIntensity: 1, envMapIntensity: ceu ? 1 : 0.3 });
     case "luz": {
       const max = Math.max(...e.cor);
       return new THREE.MeshBasicMaterial({ color: corLinear(e.cor.map((v) => v / max)) });
@@ -419,6 +425,21 @@ function montarCena(nome) {
       luz.shadow.bias = -0.002;
       cena.add(luz);
     }
+  }
+
+  // Modelos 3D (.obj): os mesmos arquivos que o C++ lê
+  for (const m of d.malhas ?? []) {
+    carregadorOBJ.loadAsync(m.arquivo).then((obj) => {
+      obj.traverse((filho) => {
+        if (!filho.isMesh) return;
+        filho.material = criarMaterial(m, d.ceu);
+        filho.castShadow = true;
+        filho.receiveShadow = true;
+      });
+      obj.scale.setScalar(m.escala);
+      obj.position.set(...m.deslocamento);
+      cena.add(obj);
+    }).catch(() => mostrarEstado("Could not load the 3D model <code>" + m.arquivo + "</code>."));
   }
 
   // Câmera igual à do ray tracer (campo de visão vertical, em graus)
