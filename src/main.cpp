@@ -9,6 +9,7 @@
 
 #include "Cenas.h"
 #include "Renderizador.h"
+#include "ScriptLua.h"
 
 namespace {
 
@@ -27,6 +28,7 @@ struct Opcoes {
 void mostrarAjuda() {
     std::cout << "Uso: raytracer [opcoes]\n\n"
               << "  --cena NOME         capa | simples | noite | modelos  (padrao: capa)\n"
+              << "                      ou um script Lua, ex.: cenas/espiral.lua\n"
               << "  --saida ARQUIVO     .bmp ou .ppm            (padrao: imagem.bmp)\n"
               << "  --largura N         largura em pixels       (padrao: 800)\n"
               << "  --amostras N        amostras por pixel      (padrao: 50)\n"
@@ -96,7 +98,8 @@ int main(int argc, char* argv[]) {
         cfg.profundidadeMaxima = op.profundidade;
         cfg.threads = op.threads;
 
-        CenaPronta cena = montarCena(op.cena, !op.semBVH);
+        bool ehScript = op.cena.size() > 4 && op.cena.compare(op.cena.size() - 4, 4, ".lua") == 0;
+        CenaPronta cena = ehScript ? carregarCenaLua(op.cena, !op.semBVH) : montarCena(op.cena, !op.semBVH);
         cfg.ceu = cena.ceu;
         Camera camera(cena.camera, static_cast<double>(cfg.largura) / cfg.altura);
 

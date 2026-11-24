@@ -14,6 +14,8 @@
 #include "Imagem.h"
 #include "Malha.h"
 #include "Material.h"
+#include "ScriptLua.h"
+#include <string>
 #include "Triangulo.h"
 
 static int falhas = 0;
@@ -169,6 +171,66 @@ void testaLeituraOBJ() {
     CHECK(lancou);  // indice que nao existe
 }
 
+// Roda um script que deveria falhar e devolve a mensagem de erro ("" se nao falhou)
+static std::string erroDoScript(const std::string& codigo) {
+    try {
+        lerCenaLua(codigo, "teste.lua");
+    } catch (const std::exception& e) {
+        return e.what();
+    }
+    return "";
+}
+
+static bool contem(const std::string& texto, const std::string& trecho) { return texto.find(trecho) != std::string::npos; }
+
+void testaCenaLua() {
+    CenaPronta c = lerCenaLua(
+        "esfera { centro = {0, -100, 0}, raio = 100, material = difuso {0.5, 0.5, 0.5} }\n"
+        "for i = 1, 3 do\n"
+        "  esfera { centro = {i, 1, 0}, raio = 0.5, material = metal({1, 1, 1}, 0.2) }\n"
+        "end\n"
+        "esfera { centro = {0, 1, 2}, raio = 0.5, material = vidro(1.33) }\n"
+        "camera { posicao = {0, 2, 10}, alvo = {0, 1, 0}, campo_de_visao = 30 }\n"
+        "ceu(false)\n",
+        "teste.lua");
+    CHECK(c.esferas.size() == 5);
+    CHECK(c.esferas[1].material.tipo == DescricaoMaterial::Tipo::Metal);
+    CHECK(perto(c.esferas[1].material.rugosidade, 0.2));
+    CHECK(perto(c.esferas[4].material.indice, 1.33));
+    CHECK(perto(c.camera.campoDeVisao, 30));
+    CHECK(perto(c.camera.posicao.z, 10));
+    CHECK(!c.ceu);
+    CHECK(c.mundo != nullptr);
+
+    // A cena montada funciona: um raio para baixo bate no chao
+    Impacto imp;
+    CHECK(c.mundo->atinge(Raio{{0, 5, 5}, {0, -1, 0}}, Intervalo(0.001, 1e9), imp));
+}
+
+void testaErrosLua() {
+    // Erros mostram o arquivo e a linha
+    std::string e = erroDoScript("esfera { centro = {0, 0, 0}, raio = 1, material = difuso {1, 1, 1} }\n"
+                                 "esfera { centro = {0, 0, 0}, material = difuso {1, 1, 1} }\n");
+    CHECK(contem(e, "teste.lua:2:"));
+    CHECK(contem(e, "raio"));
+
+    CHECK(contem(erroDoScript("esfera { centro = {0, 0}, raio = 1, material = vidro() }"), "3 numeros"));
+    CHECK(contem(erroDoScript("esfera { centro = {0, 0, 0}, raio = 1 }"), "material"));
+    CHECK(contem(erroDoScript("esfera { centro = {0, 0, 0}, raio = -1, material = vidro() }"), "maior que zero"));
+    CHECK(contem(erroDoScript("camera { posicao = {0, 0, 0} }"), "nenhum objeto"));
+    CHECK(contem(erroDoScript("isso nao e lua"), "teste.lua:1:"));  // erro de sintaxe
+}
+
+void testaSandboxLua() {
+    // Sem acesso a arquivos ou ao sistema
+    CHECK(contem(erroDoScript("os.execute('echo oi')"), "os"));
+    CHECK(contem(erroDoScript("io.open('x.txt', 'w')"), "io"));
+    CHECK(contem(erroDoScript("dofile('outro.lua')"), "dofile"));
+    CHECK(contem(erroDoScript("require('socket')"), "require"));
+    // Laco infinito e interrompido
+    CHECK(contem(erroDoScript("while true do end"), "demorou demais"));
+}
+
 int main() {
     testaVetores();
     testaRefracaoSemMudarDeMeio();
@@ -181,6 +243,9 @@ int main() {
     testaTriangulo();
     testaTrianguloSuave();
     testaLeituraOBJ();
+    testaCenaLua();
+    testaErrosLua();
+    testaSandboxLua();
 
     if (falhas == 0) {
         std::cout << "Todos os testes passaram!\n";

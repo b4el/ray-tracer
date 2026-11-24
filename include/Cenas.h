@@ -47,5 +47,9 @@ struct CenaPronta {
 CenaPronta montarCena(const std::string& nome, bool usarBVH = true);
 std::vector<std::string> nomesDasCenas();
 
+// Cria os objetos de verdade (esferas, triangulos, BVH) a partir das descricoes.
+// Usado pelas cenas prontas e pelas cenas escritas em Lua.
+void montarMundo(CenaPronta& cena, bool usarBVH = true);
+
 // Salva todas as cenas em um arquivo JSON
 void exportarCenasJSON(const std::string& caminho);

@@ -166,6 +166,8 @@ void escreverVetor(std::ostream& os, const Vec3& v) { os << '[' << v.x << ", " <
 
 }  // namespace
 
+void montarMundo(CenaPronta& cena, bool usarBVH) { construirMundo(cena, usarBVH); }
+
 std::vector<std::string> nomesDasCenas() { return {"capa", "simples", "noite", "modelos"}; }
 
 CenaPronta montarCena(const std::string& nome, bool usarBVH) {
