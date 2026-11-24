@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rasterização × Ray Tracing · Ray Tracer em C++</title>
-<meta name="description" content="Compare a mesma cena 3D desenhada em tempo real com Three.js e renderizada pelo ray tracer em C++.">
+<title>Rasterization × Ray Tracing · Ray Tracer in C++</title>
+<meta name="description" content="Compare the same 3D scene drawn in real time with Three.js and rendered by a ray tracer written in C++.">
 <meta name="theme-color" content="#11151f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -179,31 +179,31 @@
 <div class="barra">
   <a class="marca" href="https://github.com/b4el/ray-tracer">b4el / ray-tracer</a>
   <nav>
-    <a href="https://github.com/b4el/ray-tracer">Código</a>
+    <a href="https://github.com/b4el/ray-tracer">Code</a>
     <a href="https://github.com/b4el/ray-tracer/tree/main/tutorial">Tutorial</a>
-    <a href="#diferenca">Como funciona</a>
+    <a href="#diferenca">How it works</a>
   </nav>
 </div>
 
 <header class="hero">
-  <h1><span class="raster">Rasterização</span> × <span class="ray">Ray tracing</span></h1>
-  <p>A mesma cena, desenhada de dois jeitos: em tempo real no navegador, como nos jogos, e calculada raio por raio por um ray tracer escrito do zero em C++.</p>
+  <h1><span class="raster">Rasterization</span> × <span class="ray">Ray tracing</span></h1>
+  <p>The same scene, drawn two ways: in real time in your browser, the way games do it, and computed ray by ray by a ray tracer written from scratch in C++.</p>
 </header>
 
 <div class="controles">
   <div class="campo">
-    <span id="rotCena">Cena</span>
+    <span id="rotCena">Scene</span>
     <div class="segmentado" role="group" aria-labelledby="rotCena">
-      <button data-cena="capa" aria-pressed="true">Capa</button>
-      <button data-cena="simples" aria-pressed="false">Simples</button>
-      <button data-cena="noite" aria-pressed="false">Noite</button>
+      <button data-cena="capa" aria-pressed="true">Cover</button>
+      <button data-cena="simples" aria-pressed="false">Simple</button>
+      <button data-cena="noite" aria-pressed="false">Night</button>
     </div>
   </div>
   <div class="campo direita">
-    <span id="rotModo">Visualização</span>
+    <span id="rotModo">View</span>
     <div class="segmentado" role="group" aria-labelledby="rotModo">
-      <button data-modo="lado" aria-pressed="true">Lado a lado</button>
-      <button data-modo="slider" aria-pressed="false">Sobrepor</button>
+      <button data-modo="lado" aria-pressed="true">Side by side</button>
+      <button data-modo="slider" aria-pressed="false">Overlay</button>
     </div>
   </div>
 </div>
@@ -211,23 +211,23 @@
 <div class="comparacao" id="comparacao">
   <article class="painel">
     <header>
-      <span class="rotulo" id="rotuloPainel"><i style="background:var(--raster)"></i>Rasterização · Three.js</span>
+      <span class="rotulo" id="rotuloPainel"><i style="background:var(--raster)"></i>Rasterization · Three.js</span>
       <span class="chip raster" id="fps">— fps</span>
     </header>
     <div class="tela" id="telaWrap">
-      <canvas id="tela3d" aria-label="Cena 3D interativa. Arraste para girar."></canvas>
+      <canvas id="tela3d" aria-label="Interactive 3D scene. Drag to rotate."></canvas>
       <div id="sobreposicao">
         <img id="imgSobreposta" alt="">
-        <input type="range" id="faixaSlider" min="0" max="100" value="50" aria-label="Posição do divisor entre as duas imagens">
+        <input type="range" id="faixaSlider" min="0" max="100" value="50" aria-label="Position of the divider between the two images">
         <div id="divisor"></div>
         <span class="etiqueta esq">Three.js</span>
         <span class="etiqueta dir">Ray tracer</span>
       </div>
-      <div id="estado"><div><div class="girando"></div>Carregando a cena 3D…</div></div>
+      <div id="estado"><div><div class="girando"></div>Loading 3D scene…</div></div>
     </div>
     <footer>
-      <span id="dica">Arraste para girar · role para dar zoom</span>
-      <button class="botao" id="resetar">Câmera original</button>
+      <span id="dica">Drag to rotate · scroll to zoom</span>
+      <button class="botao" id="resetar">Reset camera</button>
     </footer>
   </article>
 
@@ -236,7 +236,7 @@
       <span class="rotulo"><i style="background:var(--ray)"></i>Ray tracing · C++</span>
       <span class="chip ray" id="tempoRT"></span>
     </header>
-    <div class="tela"><img id="imgRT" alt="Cena renderizada pelo ray tracer em C++"></div>
+    <div class="tela"><img id="imgRT" alt="Scene rendered by the C++ ray tracer"></div>
     <footer><span id="infoRT"></span></footer>
   </article>
 </div>
@@ -247,53 +247,53 @@
 </div>
 
 <section id="diferenca">
-  <h2>Qual a diferença?</h2>
-  <p class="sub">As duas técnicas transformam uma cena 3D em uma imagem 2D, mas fazem o caminho ao contrário.</p>
+  <h2>What is the difference?</h2>
+  <p class="sub">Both techniques turn a 3D scene into a 2D image, but they work in opposite directions.</p>
   <div class="cartoes">
     <div class="cartao" style="--cor:var(--raster)">
-      <h3>Rasterização</h3>
-      <p class="meta">Three.js · WebGL · jogos</p>
+      <h3>Rasterization</h3>
+      <p class="meta">Three.js · WebGL · games</p>
       <dl>
-        <dt>Como</dt><dd>Projeta cada triângulo na tela e pinta os pixels que ele cobre.</dd>
-        <dt>Velocidade</dt><dd>Dezenas de quadros por segundo, até no celular.</dd>
-        <dt>Realismo</dt><dd>Reflexos, sombras e vidro são <b>aproximações</b>, feitas com mapas de ambiente, mapas de sombra e truques de shader.</dd>
-        <dt>Limite</dt><dd>Um objeto não "enxerga" o outro: a esfera de metal não reflete as bolinhas ao redor.</dd>
+        <dt>How</dt><dd>Projects every triangle onto the screen and fills the pixels it covers.</dd>
+        <dt>Speed</dt><dd>Dozens of frames per second, even on a phone.</dd>
+        <dt>Realism</dt><dd>Reflections, shadows and glass are <b>approximations</b>, built with environment maps, shadow maps and shader tricks.</dd>
+        <dt>Limit</dt><dd>Objects cannot "see" each other: the metal sphere does not reflect the small balls around it.</dd>
       </dl>
     </div>
     <div class="cartao" style="--cor:var(--ray)">
       <h3>Ray tracing</h3>
-      <p class="meta">C++17 · este projeto</p>
+      <p class="meta">C++17 · this project</p>
       <dl>
-        <dt>Como</dt><dd>Dispara raios da câmera e segue a luz quicando pela cena.</dd>
-        <dt>Velocidade</dt><dd>Segundos ou minutos por imagem.</dd>
-        <dt>Realismo</dt><dd>Reflexos, refração e sombras suaves <b>surgem sozinhos</b> da física, sem truques.</dd>
-        <dt>Bônus</dt><dd>A luz colorida "vaza" de um objeto para o outro (iluminação global).</dd>
+        <dt>How</dt><dd>Shoots rays from the camera and follows the light as it bounces around the scene.</dd>
+        <dt>Speed</dt><dd>Seconds or minutes per image.</dd>
+        <dt>Realism</dt><dd>Reflections, refraction and soft shadows <b>emerge on their own</b> from the physics, no tricks.</dd>
+        <dt>Bonus</dt><dd>Colored light spills from one object onto another (global illumination).</dd>
       </dl>
     </div>
   </div>
 </section>
 
 <section>
-  <h2>Uma cena, duas versões</h2>
-  <p class="sub">O programa em C++ exporta as cenas para um arquivo JSON. Esta página lê esse arquivo e monta cada objeto com o material equivalente do Three.js.</p>
+  <h2>One scene, two versions</h2>
+  <p class="sub">The C++ program exports its scenes to a JSON file. This page reads that file and rebuilds every object with the matching Three.js material.</p>
   <span class="comando">raytracer --exportar docs/cenas.json</span>
   <div class="tabela">
     <table>
       <thead><tr><th>Ray tracer (C++)</th><th>Three.js</th></tr></thead>
       <tbody>
-        <tr><td><code>Difuso</code></td><td><code>MeshStandardMaterial</code> com rugosidade máxima</td></tr>
-        <tr><td><code>Metal</code> + rugosidade</td><td><code>MeshStandardMaterial</code> metálico + mapa de ambiente</td></tr>
-        <tr><td><code>Vidro</code> + índice de refração</td><td><code>MeshPhysicalMaterial</code> com <code>transmission</code> e <code>ior</code></td></tr>
-        <tr><td><code>Luz</code></td><td>Esfera emissiva + <code>PointLight</code></td></tr>
-        <tr><td>Céu em degradê</td><td>Textura de fundo usada também como luz ambiente (IBL) + sol fraco para as sombras</td></tr>
+        <tr><td><code>Difuso</code> (matte)</td><td><code>MeshStandardMaterial</code> with maximum roughness</td></tr>
+        <tr><td><code>Metal</code> + roughness</td><td>Metallic <code>MeshStandardMaterial</code> + environment map</td></tr>
+        <tr><td><code>Vidro</code> (glass) + refractive index</td><td><code>MeshPhysicalMaterial</code> with <code>transmission</code> and <code>ior</code></td></tr>
+        <tr><td><code>Luz</code> (light)</td><td>Emissive sphere + <code>PointLight</code></td></tr>
+        <tr><td>Gradient sky</td><td>Background texture also used as ambient lighting (IBL) + a dim sun for shadows</td></tr>
       </tbody>
     </table>
   </div>
 </section>
 
 <footer class="site">
-  <span>Feito por <a href="https://github.com/b4el">Gabriel Leandro</a></span>
-  <span><a href="https://github.com/b4el/ray-tracer">Código no GitHub</a> · <a href="https://github.com/b4el/ray-tracer/tree/main/tutorial">Tutorial para iniciantes</a></span>
+  <span>Made by <a href="https://github.com/b4el">Gabriel Leandro</a></span>
+  <span><a href="https://github.com/b4el/ray-tracer">Code on GitHub</a> · <a href="https://github.com/b4el/ray-tracer/tree/main/tutorial">Beginner tutorial (Portuguese)</a></span>
 </footer>
 
 </div>
@@ -304,12 +304,12 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 // Informações das imagens geradas pelo ray tracer (docs/*.png)
 const RENDERS = {
-  capa:    { img: "capa.png",    info: "1200×675 px · 150 amostras por pixel", tempo: "~1 min",
-             observe: "Olhe a <b>esfera de metal</b> da frente: no ray tracer ela reflete as bolinhas coloridas; no Three.js, só o céu. E a esfera de vidro do meio mostra a cena <b>de cabeça para baixo</b>, como uma lente de verdade." },
-  simples: { img: "simples.png", info: "800×450 px · 200 amostras por pixel", tempo: "~9 s",
-             observe: "A esfera da esquerda é <b>vidro oco</b>, uma bolha de ar dentro do vidro, que o Three.js não consegue simular. Compare também as <b>sombras</b>: no ray tracer elas se espalham suavemente." },
-  noite:   { img: "noite.png",   info: "800×450 px · 600 amostras por pixel", tempo: "~21 s",
-             observe: "Sem céu, só as lâmpadas iluminam. No ray tracer, a <b>luz azul</b> tinge o chão e aparece dentro do vidro, e a esfera cromada reflete as lâmpadas. O granulado é ruído de Monte Carlo: mais amostras, menos ruído." },
+  capa:    { img: "capa.png",    info: "1200×675 px · 150 samples per pixel", tempo: "~1 min",
+             observe: "Look at the <b>metal sphere</b> in front: in the ray tracer it reflects the colorful balls; in Three.js, only the sky. And the glass sphere in the middle shows the scene <b>upside down</b>, just like a real lens." },
+  simples: { img: "simples.png", info: "800×450 px · 200 samples per pixel", tempo: "~9 s",
+             observe: "The sphere on the left is <b>hollow glass</b>, an air bubble inside glass, which Three.js cannot simulate. Also compare the <b>shadows</b>: in the ray tracer they fade out smoothly." },
+  noite:   { img: "noite.png",   info: "800×450 px · 600 samples per pixel", tempo: "~21 s",
+             observe: "No sky here, only the lamps light the scene. In the ray tracer, the <b>blue light</b> tints the floor and shows up inside the glass, and the chrome sphere reflects both lamps. The grain is Monte Carlo noise: more samples, less noise." },
 };
 
 const tela = document.getElementById("tela3d");
@@ -322,7 +322,7 @@ let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas: tela, antialias: true });
 } catch (e) {
-  mostrarEstado("Seu navegador não conseguiu iniciar o WebGL, então a versão em tempo real não pode ser exibida.");
+  mostrarEstado("Your browser could not start WebGL, so the real-time version cannot be shown.");
   throw e;
 }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -448,7 +448,7 @@ function trocarCena(nome) {
   document.getElementById("imgRT").src = r.img;
   document.getElementById("imgSobreposta").src = r.img;
   document.getElementById("infoRT").textContent = r.info;
-  document.getElementById("tempoRT").textContent = r.tempo + " por imagem";
+  document.getElementById("tempoRT").textContent = r.tempo + " per image";
   document.getElementById("observe").innerHTML = r.observe;
   for (const b of document.querySelectorAll("[data-cena]")) b.setAttribute("aria-pressed", String(b.dataset.cena === nome));
 }
@@ -485,8 +485,8 @@ const faixa = document.getElementById("faixaSlider");
 const dica = document.getElementById("dica");
 const rotuloPainel = document.getElementById("rotuloPainel");
 const toque = window.matchMedia("(pointer: coarse)").matches;
-const DICA_GIRAR = toque ? "Arraste para girar · pinça para dar zoom" : "Arraste para girar · role para dar zoom";
-const DICA_SLIDER = toque ? "Arraste sobre a imagem para mover o divisor" : "Arraste sobre a imagem (ou use ← →) para mover o divisor";
+const DICA_GIRAR = toque ? "Drag to rotate · pinch to zoom" : "Drag to rotate · scroll to zoom";
+const DICA_SLIDER = toque ? "Drag across the image to move the divider" : "Drag across the image (or use ← →) to move the divider";
 dica.textContent = DICA_GIRAR;
 
 function definirCorte(pct) {
@@ -502,7 +502,7 @@ function trocarModo(modo) {
   dica.textContent = slider ? DICA_SLIDER : DICA_GIRAR;
   rotuloPainel.innerHTML = slider
     ? '<i style="background:var(--raster)"></i>Three.js <span style="color:var(--texto-3)">×</span> <i style="background:var(--ray)"></i>Ray tracer'
-    : '<i style="background:var(--raster)"></i>Rasterização · Three.js';
+    : '<i style="background:var(--raster)"></i>Rasterization · Three.js';
   if (slider) { resetarCamera(); definirCorte(50); }
   for (const b of document.querySelectorAll("[data-modo]")) b.setAttribute("aria-pressed", String(b.dataset.modo === modo));
 }
@@ -529,9 +529,9 @@ try {
   trocarCena("capa");
   estado.classList.add("oculto");
 } catch (e) {
-  mostrarEstado("Não foi possível carregar <code>cenas.json</code>.<br>Se você abriu o arquivo direto do computador, " +
-                "rode um servidor local na pasta <code>docs</code> (por exemplo <code>python -m http.server</code>) " +
-                "e acesse <code>http://localhost:8000</code>.");
+  mostrarEstado("Could not load <code>cenas.json</code>.<br>If you opened this file directly from your computer, " +
+                "start a local server in the <code>docs</code> folder (for example <code>python -m http.server</code>) " +
+                "and open <code>http://localhost:8000</code>.");
 }
 </script>
 </body>
