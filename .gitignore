@@ -1,0 +1,29 @@
+# Build
+build/
+out/
+cmake-build-*/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+CMakeSettings.json
+CMakeUserPresets.json
+
+# Binarios
+*.exe
+*.obj
+*.o
+*.pdb
+*.ilk
+*.lib
+*.a
+
+# Imagens geradas ao rodar (as do README ficam em docs/ como PNG)
+*.bmp
+*.ppm
+
+# Editores e sistema
+.vscode/
+Thumbs.db
+.DS_Store
