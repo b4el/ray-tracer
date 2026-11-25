@@ -13,8 +13,8 @@ public:
     Triangulo(const Ponto3& a, const Ponto3& b, const Ponto3& c, std::shared_ptr<Material> material);
 
     // Sombreamento suave: uma normal em cada vertice, interpolada no ponto atingido
-    Triangulo(const Ponto3& a, const Ponto3& b, const Ponto3& c,
-              const Vec3& na, const Vec3& nb, const Vec3& nc, std::shared_ptr<Material> material);
+    Triangulo(const Ponto3& a, const Ponto3& b, const Ponto3& c, const Vec3& na, const Vec3& nb, const Vec3& nc,
+              std::shared_ptr<Material> material);
 
     bool atinge(const Raio& r, Intervalo t, Impacto& impacto) const override;
     Caixa caixa() const override { return caixa_; }

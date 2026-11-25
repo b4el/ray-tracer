@@ -3,12 +3,12 @@
 #include "Raio.h"
 
 struct ConfigCamera {
-    Ponto3 posicao{0, 0, 0};    // onde a camera esta
-    Ponto3 alvo{0, 0, -1};      // para onde ela olha
-    Vec3 cima{0, 1, 0};         // qual direcao e "para cima"
-    double campoDeVisao = 90;   // angulo vertical, em graus (menor = mais zoom)
-    double abertura = 0;        // tamanho da lente: 0 = tudo em foco
-    double distanciaFoco = 1;   // distancia do plano que fica nitido
+    Ponto3 posicao{0, 0, 0};   // onde a camera esta
+    Ponto3 alvo{0, 0, -1};     // para onde ela olha
+    Vec3 cima{0, 1, 0};        // qual direcao e "para cima"
+    double campoDeVisao = 90;  // angulo vertical, em graus (menor = mais zoom)
+    double abertura = 0;       // tamanho da lente: 0 = tudo em foco
+    double distanciaFoco = 1;  // distancia do plano que fica nitido
 };
 
 class Camera {

@@ -65,14 +65,22 @@ Opcoes lerOpcoes(int argc, char* argv[]) {
         if (i + 1 >= argc) throw std::invalid_argument("Faltou o valor de " + arg);
         std::string valor = argv[++i];
 
-        if (arg == "--cena") op.cena = valor;
-        else if (arg == "--saida") op.saida = valor;
-        else if (arg == "--largura") op.largura = lerInteiro(valor, arg);
-        else if (arg == "--amostras") op.amostras = lerInteiro(valor, arg);
-        else if (arg == "--profundidade") op.profundidade = lerInteiro(valor, arg);
-        else if (arg == "--threads") op.threads = lerInteiro(valor, arg);
-        else if (arg == "--exportar") op.exportar = valor;
-        else throw std::invalid_argument("Opcao desconhecida: " + arg);
+        if (arg == "--cena")
+            op.cena = valor;
+        else if (arg == "--saida")
+            op.saida = valor;
+        else if (arg == "--largura")
+            op.largura = lerInteiro(valor, arg);
+        else if (arg == "--amostras")
+            op.amostras = lerInteiro(valor, arg);
+        else if (arg == "--profundidade")
+            op.profundidade = lerInteiro(valor, arg);
+        else if (arg == "--threads")
+            op.threads = lerInteiro(valor, arg);
+        else if (arg == "--exportar")
+            op.exportar = valor;
+        else
+            throw std::invalid_argument("Opcao desconhecida: " + arg);
     }
     if (op.largura < 16) throw std::invalid_argument("A largura minima e 16 pixels.");
     if (op.amostras < 1) throw std::invalid_argument("Use pelo menos 1 amostra.");

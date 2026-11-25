@@ -2,6 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/b4el/ray-tracer/actions/workflows/build.yml"><img src="https://github.com/b4el/ray-tracer/actions/workflows/build.yml/badge.svg" alt="Build"></a>
+  <a href="https://github.com/b4el/ray-tracer/actions/workflows/qualidade.yml"><img src="https://github.com/b4el/ray-tracer/actions/workflows/qualidade.yml/badge.svg" alt="Code quality"></a>
   <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white" alt="C++17">
   <img src="https://img.shields.io/badge/CMake-3.16+-064F8C?logo=cmake&logoColor=white" alt="CMake">
   <img src="https://img.shields.io/badge/Lua-5.4-2C2D72?logo=lua&logoColor=white" alt="Lua 5.4">
@@ -45,11 +46,12 @@
 | 🌳 **BVH** | Bounding Volume Hierarchy that cuts the cost of each ray from O(n) to roughly O(log n) |
 | 🖼️ **Output** | 24-bit BMP (opens natively on Windows) or PPM, written by hand byte by byte |
 | 🌐 **Web comparison** | [Interactive page](https://b4el.github.io/ray-tracer/) that rebuilds the same scenes in Three.js (rasterization) next to the ray-traced result, with an overlay slider |
-| 🧪 **Tests** | Tests for vectors, sphere and triangle intersections, the `.obj` parser, Lua scenes (including the sandbox), the BVH (checked against brute force) and the BMP format, running in CI |
+| 🧪 **Tests** | 30 **GoogleTest** tests: vectors, sphere and triangle intersections, the `.obj` parser, Lua scenes (including the sandbox), the BVH (checked against brute force) and the BMP format |
+| 🛡️ **Code quality** | `clang-format`, `clang-tidy` and AddressSanitizer / UBSan / ThreadSanitizer, all enforced in CI |
 
 ## 🚀 Getting started
 
-**Requirements:** a C++17 compiler (Visual Studio 2019+, GCC 8+ or Clang 7+), CMake 3.16+ and Git. Lua 5.4 is downloaded and built automatically by CMake the first time you configure the project.
+**Requirements:** a C++17 compiler (Visual Studio 2019+, GCC 8+ or Clang 7+), CMake 3.16+ and Git. Lua 5.4 and GoogleTest are downloaded and built automatically by CMake the first time you configure the project.
 
 ### Visual Studio
 
@@ -158,6 +160,32 @@ Try it yourself:
 ./build/raytracer --cena modelos --largura 320 --amostras 4 --sem-bvh
 ```
 
+## 🛡️ Code quality
+
+Every push runs two GitHub Actions workflows:
+
+| Workflow | What it checks |
+|---|---|
+| **Build** | Compiles and runs the tests on **Windows (MSVC)** and **Linux (GCC)** |
+| **Code quality** | **clang-format** (consistent style), **clang-tidy** (static analysis: likely bugs and performance issues, warnings are errors) and two **sanitizer** builds that run the tests and real renders: AddressSanitizer + UndefinedBehaviorSanitizer (memory errors, undefined behavior) and ThreadSanitizer (data races between render threads) |
+
+Run them locally (Linux/macOS):
+
+```bash
+# Tests (also visible one by one in Visual Studio's Test Explorer)
+ctest --test-dir build --output-on-failure
+
+# Style and static analysis
+clang-format --dry-run --Werror include/*.h src/*.cpp tests/*.cpp tutorial/*.cpp tutorial/*.h
+run-clang-tidy -p build "/src/[^/]+\.cpp$"
+
+# Sanitizers
+cmake -S . -B build-asan -DRT_SANITIZERS=address && cmake --build build-asan && ctest --test-dir build-asan
+cmake -S . -B build-tsan -DRT_SANITIZERS=thread  && cmake --build build-tsan && ./build-tsan/raytracer --cena modelos --largura 160 --amostras 4
+```
+
+In Visual Studio, **Ctrl+K, Ctrl+D** formats the open file using the project's `.clang-format`.
+
 ## 🧠 How it works
 
 For every pixel, the program shoots rays from the camera into the scene and asks: *how much light arrives along this path?*
@@ -197,7 +225,7 @@ ray-tracer/
 ├── cenas/            # Example scenes written in Lua
 ├── modelos/          # 3D models (.obj)
 ├── ferramentas/      # Python script that generates the models
-├── tests/            # Automated tests
+├── tests/            # GoogleTest tests (math, objects, files, Lua)
 ├── tutorial/         # 6-stage beginner tutorial
 └── docs/             # Comparison page (Three.js), cenas.json and images
 ```
@@ -212,7 +240,7 @@ ray-tracer/
 - **File parsing:** a tolerant `.obj` reader with clear error messages
 - **Embedding a scripting language:** the Lua C API, a C/C++ boundary that is safe with `longjmp`-based errors, sandboxing and execution limits
 - **Build tooling:** CMake `FetchContent` to download and build a C dependency
-- **Engineering:** CMake, automated tests and continuous integration with GitHub Actions
+- **Engineering:** CMake, GoogleTest, clang-format, clang-tidy, sanitizers and continuous integration with GitHub Actions
 - **Web:** Three.js, WebGL and GitHub Pages, reading scenes exported by the C++ program
 
 ## 🔭 Roadmap

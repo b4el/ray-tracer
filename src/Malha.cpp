@@ -33,11 +33,13 @@ DadosMalha lerOBJ(const std::string& conteudo) {
 
         if (tipo == "v") {
             Ponto3 p;
-            if (!(ss >> p.x >> p.y >> p.z)) throw std::runtime_error("Vertice invalido na linha " + std::to_string(numero));
+            if (!(ss >> p.x >> p.y >> p.z))
+                throw std::runtime_error("Vertice invalido na linha " + std::to_string(numero));
             m.vertices.push_back(p);
         } else if (tipo == "vn") {
             Vec3 n;
-            if (!(ss >> n.x >> n.y >> n.z)) throw std::runtime_error("Normal invalida na linha " + std::to_string(numero));
+            if (!(ss >> n.x >> n.y >> n.z))
+                throw std::runtime_error("Normal invalida na linha " + std::to_string(numero));
             m.normais.push_back(n);
         } else if (tipo == "f") {
             // Cada canto pode ser "v", "v/vt", "v//vn" ou "v/vt/vn"
@@ -54,13 +56,18 @@ DadosMalha lerOBJ(const std::string& conteudo) {
                 }
                 ns.push_back(n);
             }
-            if (vs.size() < 3) throw std::runtime_error("Face com menos de 3 vertices na linha " + std::to_string(numero));
+            if (vs.size() < 3)
+                throw std::runtime_error("Face com menos de 3 vertices na linha " + std::to_string(numero));
 
             // Divide poligonos em triangulos "em leque": (0,1,2), (0,2,3), ...
             for (size_t k = 1; k + 1 < vs.size(); k++) {
                 DadosMalha::Face f;
-                f.v[0] = vs[0]; f.v[1] = vs[k]; f.v[2] = vs[k + 1];
-                f.n[0] = ns[0]; f.n[1] = ns[k]; f.n[2] = ns[k + 1];
+                f.v[0] = vs[0];
+                f.v[1] = vs[k];
+                f.v[2] = vs[k + 1];
+                f.n[0] = ns[0];
+                f.n[1] = ns[k];
+                f.n[2] = ns[k + 1];
                 m.faces.push_back(f);
             }
         }
@@ -79,8 +86,8 @@ DadosMalha carregarOBJ(const std::string& caminho) {
     return lerOBJ(conteudo.str());
 }
 
-std::vector<std::shared_ptr<Objeto>> criarTriangulos(const DadosMalha& malha, const Vec3& deslocamento,
-                                                     double escala, std::shared_ptr<Material> material) {
+std::vector<std::shared_ptr<Objeto>> criarTriangulos(const DadosMalha& malha, const Vec3& deslocamento, double escala,
+                                                     const std::shared_ptr<Material>& material) {
     std::vector<std::shared_ptr<Objeto>> triangulos;
     triangulos.reserve(malha.faces.size());
 

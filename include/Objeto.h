@@ -11,9 +11,9 @@ class Material;
 // Informacoes sobre o ponto onde um raio bateu num objeto
 struct Impacto {
     Ponto3 ponto;
-    Vec3 normal;                 // sempre aponta CONTRA o raio
-    double t = 0;                // distancia ao longo do raio
-    bool faceDeFora = true;      // o raio veio de fora do objeto?
+    Vec3 normal;             // sempre aponta CONTRA o raio
+    double t = 0;            // distancia ao longo do raio
+    bool faceDeFora = true;  // o raio veio de fora do objeto?
     const Material* material = nullptr;
 
     // normalParaFora deve ter comprimento 1

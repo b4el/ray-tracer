@@ -9,6 +9,23 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Opcoes de qualidade (desligadas por padrao):
+#   cmake -S . -B build-asan -DRT_SANITIZERS=address   -> AddressSanitizer + UndefinedBehaviorSanitizer
+#   cmake -S . -B build-tsan -DRT_SANITIZERS=thread    -> ThreadSanitizer (erros entre threads)
+set(RT_SANITIZERS "" CACHE STRING "Sanitizers: vazio, 'address' ou 'thread' (GCC/Clang)")
+if(RT_SANITIZERS STREQUAL "address")
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    add_link_options(-fsanitize=address,undefined)
+elseif(RT_SANITIZERS STREQUAL "thread")
+    add_compile_options(-fsanitize=thread)
+    add_link_options(-fsanitize=thread)
+elseif(NOT RT_SANITIZERS STREQUAL "")
+    message(FATAL_ERROR "RT_SANITIZERS deve ser vazio, 'address' ou 'thread'")
+endif()
+
+# Gera compile_commands.json (usado pelo clang-tidy e por editores)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Avisos ligados so no NOSSO codigo (nao no codigo do Lua)
 if(MSVC)
     set(AVISOS /W4)
@@ -79,12 +96,28 @@ add_custom_target(copiar_recursos ALL
 )
 add_dependencies(raytracer copiar_recursos)
 
-# ---------- Testes ----------
+# ---------- Testes (GoogleTest, baixado automaticamente) ----------
+FetchContent_Declare(googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        v1.17.0
+    GIT_SHALLOW    TRUE
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # Windows: mesma biblioteca de runtime do projeto
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 enable_testing()
-add_executable(testes tests/testes.cpp)
-target_link_libraries(testes PRIVATE raytracer_core)
+add_executable(testes
+    tests/test_matematica.cpp
+    tests/test_objetos.cpp
+    tests/test_arquivos.cpp
+    tests/test_lua.cpp
+)
+target_link_libraries(testes PRIVATE raytracer_core GTest::gtest_main)
 target_compile_options(testes PRIVATE ${AVISOS})
-add_test(NAME testes_raytracer COMMAND testes)
+include(GoogleTest)
+gtest_discover_tests(testes)  # cada TEST vira um teste separado no ctest e no Visual Studio
 
 # ---------- Etapas do tutorial (cada uma e um programa independente) ----------
 file(GLOB ETAPAS CONFIGURE_DEPENDS tutorial/etapa*.cpp)

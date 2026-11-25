@@ -10,7 +10,7 @@
 // Dados lidos de um arquivo .obj (formato de modelos 3D em texto)
 struct DadosMalha {
     struct Face {
-        int v[3];             // indices dos vertices
+        int v[3];                 // indices dos vertices
         int n[3] = {-1, -1, -1};  // indices das normais (-1 = sem normal)
     };
     std::vector<Ponto3> vertices;
@@ -27,5 +27,5 @@ DadosMalha lerOBJ(const std::string& conteudo);
 
 // Transforma a malha em triangulos prontos para a cena:
 // escala, depois desloca, e usa normais suaves quando o arquivo as tiver.
-std::vector<std::shared_ptr<Objeto>> criarTriangulos(const DadosMalha& malha, const Vec3& deslocamento,
-                                                     double escala, std::shared_ptr<Material> material);
+std::vector<std::shared_ptr<Objeto>> criarTriangulos(const DadosMalha& malha, const Vec3& deslocamento, double escala,
+                                                     const std::shared_ptr<Material>& material);

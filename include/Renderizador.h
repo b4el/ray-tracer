@@ -7,10 +7,10 @@
 struct ConfigRender {
     int largura = 800;
     int altura = 450;
-    int amostrasPorPixel = 50;  // mais amostras = menos "chuvisco", mais lento
+    int amostrasPorPixel = 50;    // mais amostras = menos "chuvisco", mais lento
     int profundidadeMaxima = 20;  // quantas vezes um raio pode quicar
-    int threads = 0;            // 0 = usar todos os nucleos do processador
-    bool ceu = true;            // false = fundo preto (so luzes iluminam)
+    int threads = 0;              // 0 = usar todos os nucleos do processador
+    bool ceu = true;              // false = fundo preto (so luzes iluminam)
     bool mostrarProgresso = true;
 };
 

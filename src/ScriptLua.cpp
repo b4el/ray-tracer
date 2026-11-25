@@ -68,7 +68,8 @@ Vec3 lerTripla(lua_State* L, int indice, const char* funcao, const char* campo) 
     double v[3];
     for (int i = 0; i < 3; i++) {
         lua_rawgeti(L, indice, i + 1);
-        if (!lua_isnumber(L, -1)) luaL_error(L, "%s: o campo '%s' precisa ter 3 numeros, como {1, 2, 3}", funcao, campo);
+        if (!lua_isnumber(L, -1))
+            luaL_error(L, "%s: o campo '%s' precisa ter 3 numeros, como {1, 2, 3}", funcao, campo);
         v[i] = lua_tonumber(L, -1);
         lua_pop(L, 1);
     }
@@ -100,11 +101,16 @@ DescricaoMaterial lerMaterial(lua_State* L, int tabela, const char* funcao) {
 
     DescricaoMaterial d;
     using Tipo = DescricaoMaterial::Tipo;
-    if (std::string_view(tipo) == "difuso") d.tipo = Tipo::Difuso;
-    else if (std::string_view(tipo) == "metal") d.tipo = Tipo::Metal;
-    else if (std::string_view(tipo) == "vidro") d.tipo = Tipo::Vidro;
-    else if (std::string_view(tipo) == "luz") d.tipo = Tipo::Luz;
-    else luaL_error(L, "%s: tipo de material desconhecido: %s", funcao, tipo);
+    if (std::string_view(tipo) == "difuso")
+        d.tipo = Tipo::Difuso;
+    else if (std::string_view(tipo) == "metal")
+        d.tipo = Tipo::Metal;
+    else if (std::string_view(tipo) == "vidro")
+        d.tipo = Tipo::Vidro;
+    else if (std::string_view(tipo) == "luz")
+        d.tipo = Tipo::Luz;
+    else
+        luaL_error(L, "%s: tipo de material desconhecido: %s", funcao, tipo);
     lua_pop(L, 1);
 
     if (d.tipo != Tipo::Vidro) d.cor = lerVetor(L, m, funcao, "cor", true, {});
@@ -160,7 +166,8 @@ int luaCamera(lua_State* L) {
     c.campoDeVisao = lerNumero(L, 1, "camera", "campo_de_visao", false, c.campoDeVisao);
     c.abertura = lerNumero(L, 1, "camera", "abertura", false, c.abertura);
     c.distanciaFoco = lerNumero(L, 1, "camera", "distancia_foco", false, (c.posicao - c.alvo).comprimento());
-    if (c.campoDeVisao <= 0 || c.campoDeVisao >= 180) luaL_error(L, "camera: campo_de_visao precisa estar entre 0 e 180 graus");
+    if (c.campoDeVisao <= 0 || c.campoDeVisao >= 180)
+        luaL_error(L, "camera: campo_de_visao precisa estar entre 0 e 180 graus");
     if ((c.posicao - c.alvo).quaseZero()) luaL_error(L, "camera: posicao e alvo nao podem ser o mesmo ponto");
     cenaAtual(L).camera = c;
     return 0;
@@ -186,7 +193,7 @@ void verificarTempo(lua_State* L, lua_Debug*) {
 // Abre so as bibliotecas seguras: nada de io, os, package ou debug
 void abrirBibliotecasSeguras(lua_State* L) {
     const luaL_Reg seguras[] = {
-        {LUA_GNAME, luaopen_base},     {LUA_MATHLIBNAME, luaopen_math}, {LUA_STRLIBNAME, luaopen_string},
+        {LUA_GNAME, luaopen_base},       {LUA_MATHLIBNAME, luaopen_math}, {LUA_STRLIBNAME, luaopen_string},
         {LUA_TABLIBNAME, luaopen_table}, {LUA_UTF8LIBNAME, luaopen_utf8},
     };
     for (const luaL_Reg& lib : seguras) {
@@ -230,7 +237,8 @@ CenaPronta lerCenaLua(const std::string& codigo, const std::string& nome, bool u
         lua_setglobal(L, f.name);
     }
 
-    if (luaL_dostring(L, PRELUDIO) != LUA_OK) throw std::runtime_error("Erro interno no preludio Lua: " + mensagemDeErro(L));
+    if (luaL_dostring(L, PRELUDIO) != LUA_OK)
+        throw std::runtime_error("Erro interno no preludio Lua: " + mensagemDeErro(L));
 
     // Protecao contra laco infinito
     lua_pushinteger(L, 0);

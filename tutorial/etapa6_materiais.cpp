@@ -73,6 +73,7 @@ public:
 
 class Fosco : public Material {
     Vec3 cor;
+
 public:
     explicit Fosco(Vec3 c) : cor(c) {}
     bool espalhar(const Raio&, const Impacto& imp, Vec3& atenuacao, Raio& saida) const override {
@@ -85,6 +86,7 @@ public:
 class Metal : public Material {
     Vec3 cor;
     double rugosidade;
+
 public:
     Metal(Vec3 c, double r) : cor(c), rugosidade(r) {}
     bool espalhar(const Raio& entrada, const Impacto& imp, Vec3& atenuacao, Raio& saida) const override {

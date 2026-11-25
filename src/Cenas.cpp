@@ -35,6 +35,7 @@ std::shared_ptr<Material> criarMaterial(const DescricaoMaterial& d) {
 // Com muitos objetos, usa a BVH; com poucos, uma lista simples basta.
 void construirMundo(CenaPronta& cena, bool usarBVH) {
     std::vector<std::shared_ptr<Objeto>> objetos;
+    objetos.reserve(cena.esferas.size());  // evita realocar o vetor a cada esfera
     for (const DescricaoEsfera& e : cena.esferas)
         objetos.push_back(std::make_shared<Esfera>(e.centro, e.raio, criarMaterial(e.material)));
 
@@ -121,8 +122,8 @@ CenaPronta cenaNoite() {
         {{0, 1, 0}, 1, metal({0.9, 0.9, 0.9}, 0.05)},
         {{-2.2, 0.7, 0.8}, 0.7, vidro(1.5)},
         {{2.2, 0.7, -0.6}, 0.7, difuso({0.2, 0.6, 0.9})},
-        {{0, 5, 3}, 1.6, luz({5, 3.6, 2.0})},         // luz quente
-        {{-3.5, 1.2, -2.5}, 0.6, luz({1.5, 3, 7})},   // luz azul
+        {{0, 5, 3}, 1.6, luz({5, 3.6, 2.0})},        // luz quente
+        {{-3.5, 1.2, -2.5}, 0.6, luz({1.5, 3, 7})},  // luz azul
     };
     c.camera.posicao = {0, 2.2, 8};
     c.camera.alvo = {0, 0.8, 0};
@@ -172,11 +173,16 @@ std::vector<std::string> nomesDasCenas() { return {"capa", "simples", "noite", "
 
 CenaPronta montarCena(const std::string& nome, bool usarBVH) {
     CenaPronta c;
-    if (nome == "capa") c = cenaCapa();
-    else if (nome == "simples") c = cenaSimples();
-    else if (nome == "noite") c = cenaNoite();
-    else if (nome == "modelos") c = cenaModelos();
-    else throw std::invalid_argument("Cena desconhecida: " + nome);
+    if (nome == "capa")
+        c = cenaCapa();
+    else if (nome == "simples")
+        c = cenaSimples();
+    else if (nome == "noite")
+        c = cenaNoite();
+    else if (nome == "modelos")
+        c = cenaModelos();
+    else
+        throw std::invalid_argument("Cena desconhecida: " + nome);
 
     c.nome = nome;
     construirMundo(c, usarBVH);
@@ -215,7 +221,8 @@ void exportarCenasJSON(const std::string& caminho) {
             const DescricaoMalha& m = c.malhas[j];
             os << "      { \"arquivo\": \"modelos/" << m.arquivo << "\", \"deslocamento\": ";
             escreverVetor(os, m.deslocamento);
-            os << ", \"escala\": " << m.escala << ", \"material\": \"" << nomeDoTipo(m.material.tipo) << "\", \"cor\": ";
+            os << ", \"escala\": " << m.escala << ", \"material\": \"" << nomeDoTipo(m.material.tipo)
+               << "\", \"cor\": ";
             escreverVetor(os, m.material.cor);
             os << ", \"rugosidade\": " << m.material.rugosidade << ", \"indice\": " << m.material.indice << " }"
                << (j + 1 < c.malhas.size() ? "," : "") << "\n";

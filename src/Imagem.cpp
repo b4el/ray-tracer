@@ -11,8 +11,8 @@ Imagem::Imagem(int largura, int altura) : largura_(largura), altura_(altura) {
 }
 
 unsigned char Imagem::paraByte(double c) {
-    if (!(c > 0)) return 0;          // tambem trata NaN
-    c = std::sqrt(c);                // correcao gama 2.0: o olho percebe brilho de forma nao linear
+    if (!(c > 0)) return 0;  // tambem trata NaN
+    c = std::sqrt(c);        // correcao gama 2.0: o olho percebe brilho de forma nao linear
     if (c > 0.999) c = 0.999;
     return static_cast<unsigned char>(256 * c);
 }
@@ -21,8 +21,10 @@ void Imagem::salvar(const std::string& caminho) const {
     auto terminaCom = [&](const std::string& fim) {
         return caminho.size() >= fim.size() && caminho.compare(caminho.size() - fim.size(), fim.size(), fim) == 0;
     };
-    if (terminaCom(".ppm")) salvarPPM(caminho);
-    else salvarBMP(caminho);
+    if (terminaCom(".ppm"))
+        salvarPPM(caminho);
+    else
+        salvarBMP(caminho);
 }
 
 // PPM: o formato de imagem mais simples que existe (texto puro)

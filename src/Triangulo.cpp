@@ -18,10 +18,17 @@ Triangulo::Triangulo(const Ponto3& a, const Ponto3& b, const Ponto3& c, std::sha
     na_ = nb_ = nc_ = n;
 }
 
-Triangulo::Triangulo(const Ponto3& a, const Ponto3& b, const Ponto3& c,
-                     const Vec3& na, const Vec3& nb, const Vec3& nc, std::shared_ptr<Material> material)
-    : a_(a), b_(b), c_(c), na_(normalizar(na)), nb_(normalizar(nb)), nc_(normalizar(nc)), suave_(true),
-      material_(std::move(material)), caixa_(caixaDe(a, b, c)) {}
+Triangulo::Triangulo(const Ponto3& a, const Ponto3& b, const Ponto3& c, const Vec3& na, const Vec3& nb, const Vec3& nc,
+                     std::shared_ptr<Material> material)
+    : a_(a),
+      b_(b),
+      c_(c),
+      na_(normalizar(na)),
+      nb_(normalizar(nb)),
+      nc_(normalizar(nc)),
+      suave_(true),
+      material_(std::move(material)),
+      caixa_(caixaDe(a, b, c)) {}
 
 // Algoritmo de Moller-Trumbore: resolve de uma vez a distancia t e as
 // coordenadas baricentricas (u, v) do ponto dentro do triangulo.

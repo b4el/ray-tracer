@@ -10,8 +10,18 @@ struct Vec3 {
     constexpr Vec3(double x, double y, double z) : x(x), y(y), z(z) {}
 
     constexpr Vec3 operator-() const { return {-x, -y, -z}; }
-    Vec3& operator+=(const Vec3& v) { x += v.x; y += v.y; z += v.z; return *this; }
-    Vec3& operator*=(double t) { x *= t; y *= t; z *= t; return *this; }
+    Vec3& operator+=(const Vec3& v) {
+        x += v.x;
+        y += v.y;
+        z += v.z;
+        return *this;
+    }
+    Vec3& operator*=(double t) {
+        x *= t;
+        y *= t;
+        z *= t;
+        return *this;
+    }
     Vec3& operator/=(double t) { return *this *= 1.0 / t; }
 
     double comprimentoAoQuadrado() const { return x * x + y * y + z * z; }

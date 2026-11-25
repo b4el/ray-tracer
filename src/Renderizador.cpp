@@ -69,6 +69,7 @@ Imagem renderizar(const Objeto& mundo, const Camera& camera, const ConfigRender&
     };
 
     std::vector<std::thread> threads;
+    threads.reserve(static_cast<size_t>(numThreads));
     for (int i = 0; i < numThreads; i++) threads.emplace_back(trabalhador);
     for (auto& t : threads) t.join();  // espera todas terminarem
 

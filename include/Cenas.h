@@ -13,9 +13,9 @@
 struct DescricaoMaterial {
     enum class Tipo { Difuso, Metal, Vidro, Luz };
     Tipo tipo = Tipo::Difuso;
-    Cor cor{0.5, 0.5, 0.5};   // Difuso, Metal e Luz
-    double rugosidade = 0;    // Metal
-    double indice = 1.5;      // Vidro
+    Cor cor{0.5, 0.5, 0.5};  // Difuso, Metal e Luz
+    double rugosidade = 0;   // Metal
+    double indice = 1.5;     // Vidro
 };
 
 struct DescricaoEsfera {

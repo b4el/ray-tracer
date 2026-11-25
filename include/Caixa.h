@@ -41,7 +41,11 @@ struct Caixa {
             const double inv = 1.0 / direcao[a];
             double t0 = (ax.min - origem[a]) * inv;
             double t1 = (ax.max - origem[a]) * inv;
-            if (t0 > t1) { double tmp = t0; t0 = t1; t1 = tmp; }
+            if (t0 > t1) {
+                double tmp = t0;
+                t0 = t1;
+                t1 = tmp;
+            }
             if (t0 > t.min) t.min = t0;
             if (t1 < t.max) t.max = t1;
             if (t.max <= t.min) return false;

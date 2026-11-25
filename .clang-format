@@ -1,0 +1,16 @@
+# Estilo do codigo. Para formatar tudo:  clang-format -i include/*.h src/*.cpp tests/*.cpp tutorial/*.cpp tutorial/*.h
+# No Visual Studio: Ctrl+K, Ctrl+D formata o arquivo aberto usando este arquivo.
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Empty
+DerivePointerAlignment: false
+PointerAlignment: Left
+SpacesBeforeTrailingComments: 2
+IncludeBlocks: Preserve
+SortIncludes: CaseSensitive
+AllowShortCaseLabelsOnASingleLine: true

@@ -91,8 +91,7 @@ Vec3 corDoRaio(const Raio& r, const std::vector<Esfera>& cena) {
 
 int main() {
     std::vector<Esfera> cena = {
-        {{0, 0, -1}, 0.5},
-        {{0, -100.5, -1}, 100},  // o chao: uma esfera enorme
+        {{0, 0, -1}, 0.5}, {{0, -100.5, -1}, 100},  // o chao: uma esfera enorme
     };
 
     const int largura = 400, altura = 225;

@@ -3,8 +3,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-NoBVH::NoBVH(std::vector<std::shared_ptr<Objeto>> objetos)
-    : NoBVH(objetos, 0, objetos.size()) {}
+NoBVH::NoBVH(std::vector<std::shared_ptr<Objeto>> objetos) : NoBVH(objetos, 0, objetos.size()) {}
 
 NoBVH::NoBVH(std::vector<std::shared_ptr<Objeto>>& objetos, size_t inicio, size_t fim) {
     if (inicio >= fim) throw std::invalid_argument("BVH precisa de pelo menos um objeto.");

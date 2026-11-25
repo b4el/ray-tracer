@@ -1,0 +1,21 @@
+# Analise estatica. Foco em bugs reais e desempenho, sem regras so de "gosto".
+# Rodar (Linux/macOS):  run-clang-tidy -p build "/src/[^/]+\.cpp$"
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  clang-analyzer-*,
+  performance-*,
+  -performance-enum-size,
+  modernize-use-override,
+  modernize-use-nullptr,
+  modernize-use-emplace,
+  modernize-loop-convert,
+  readability-container-size-empty,
+  readability-redundant-string-init,
+  readability-else-after-return,
+  misc-unused-using-decls,
+  misc-redundant-expression
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/include/.*'
