@@ -1,7 +1,11 @@
 #pragma once
 
+#include <memory>
+#include <utility>
+
 #include "Objeto.h"
 #include "Raio.h"
+#include "Textura.h"
 
 // Um material decide o que acontece quando a luz bate nele:
 // para onde o raio vai depois (espalhado) e quanto de cada cor sobra (atenuacao).
@@ -19,11 +23,12 @@ public:
 // Superficie fosca: espalha a luz em direcoes aleatorias (giz, papel, parede)
 class Difuso : public Material {
 public:
-    explicit Difuso(const Cor& cor) : cor_(cor) {}
+    explicit Difuso(const Cor& cor) : textura_(std::make_shared<CorSolida>(cor)) {}
+    explicit Difuso(std::shared_ptr<Textura> textura) : textura_(std::move(textura)) {}
     bool espalhar(const Raio& entrada, const Impacto& impacto, Cor& atenuacao, Raio& espalhado) const override;
 
 private:
-    Cor cor_;
+    std::shared_ptr<Textura> textura_;  // a cor pode variar ponto a ponto (xadrez, imagem)
 };
 
 // Metal: reflete como espelho. 'rugosidade' (0 a 1) deixa o reflexo borrado.

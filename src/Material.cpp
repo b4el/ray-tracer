@@ -10,7 +10,7 @@ bool Difuso::espalhar(const Raio&, const Impacto& impacto, Cor& atenuacao, Raio&
     if (direcao.quaseZero()) direcao = impacto.normal;  // caso raro: os dois se anularam
 
     espalhado = {impacto.ponto, direcao};
-    atenuacao = cor_;
+    atenuacao = textura_->valor(impacto.u, impacto.v, impacto.ponto);
     return true;
 }
 

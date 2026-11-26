@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <fstream>
 #include <stdexcept>
+#include <vector>
+
+#include "stb_image_write.h"
 
 Imagem::Imagem(int largura, int altura) : largura_(largura), altura_(altura) {
     if (largura <= 0 || altura <= 0) throw std::invalid_argument("Tamanho de imagem invalido.");
@@ -21,10 +24,31 @@ void Imagem::salvar(const std::string& caminho) const {
     auto terminaCom = [&](const std::string& fim) {
         return caminho.size() >= fim.size() && caminho.compare(caminho.size() - fim.size(), fim.size(), fim) == 0;
     };
-    if (terminaCom(".ppm"))
+    if (terminaCom(".png") || terminaCom(".PNG"))
+        salvarPNG(caminho);
+    else if (terminaCom(".ppm"))
         salvarPPM(caminho);
-    else
+    else if (terminaCom(".bmp") || terminaCom(".BMP"))
         salvarBMP(caminho);
+    else
+        throw std::invalid_argument("Formato de imagem nao suportado (use .png, .bmp ou .ppm): " + caminho);
+}
+
+// PNG: compactado e aceito em qualquer lugar. Quem faz a compressao e a stb_image_write.
+void Imagem::salvarPNG(const std::string& caminho) const {
+    std::vector<unsigned char> bytes(static_cast<size_t>(largura_) * static_cast<size_t>(altura_) * 3);
+    for (int y = 0; y < altura_; y++) {
+        for (int x = 0; x < largura_; x++) {
+            const Cor& c = obter(x, y);
+            size_t i = (static_cast<size_t>(y) * static_cast<size_t>(largura_) + static_cast<size_t>(x)) * 3;
+            bytes[i] = paraByte(c.x);
+            bytes[i + 1] = paraByte(c.y);
+            bytes[i + 2] = paraByte(c.z);
+        }
+    }
+    const int bytesPorLinha = largura_ * 3;
+    if (stbi_write_png(caminho.c_str(), largura_, altura_, 3, bytes.data(), bytesPorLinha) == 0)
+        throw std::runtime_error("Nao foi possivel criar " + caminho);
 }
 
 // PPM: o formato de imagem mais simples que existe (texto puro)

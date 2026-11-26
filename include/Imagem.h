@@ -17,8 +17,9 @@ public:
     void definir(int x, int y, const Cor& cor) { pixels_[static_cast<size_t>(y) * largura_ + x] = cor; }
     const Cor& obter(int x, int y) const { return pixels_[static_cast<size_t>(y) * largura_ + x]; }
 
-    // Escolhe o formato pela extensao: .bmp (abre direto no Windows) ou .ppm
+    // Escolhe o formato pela extensao: .png, .bmp ou .ppm
     void salvar(const std::string& caminho) const;
+    void salvarPNG(const std::string& caminho) const;
     void salvarBMP(const std::string& caminho) const;
     void salvarPPM(const std::string& caminho) const;
 

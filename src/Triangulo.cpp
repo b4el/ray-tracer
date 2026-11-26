@@ -56,6 +56,8 @@ bool Triangulo::atinge(const Raio& r, Intervalo t, Impacto& impacto) const {
     // Faces planas: na_ == nb_ == nc_, entao a interpolacao devolve a propria normal
     Vec3 normal = suave_ ? normalizar((1.0 - u - v) * na_ + u * nb_ + v * nc_) : na_;
     impacto.definirNormal(r, normal);
+    impacto.u = u;  // coordenadas baricentricas servem como (u, v) da textura
+    impacto.v = v;
     impacto.material = material_.get();
     return true;
 }

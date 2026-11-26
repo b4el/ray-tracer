@@ -11,10 +11,14 @@
 //
 // Funcoes disponiveis no script (veja cenas/exemplo.lua):
 //   esfera { centro = {x, y, z}, raio = r, material = ... }
+//   quad   { canto = {x, y, z}, u = {x, y, z}, v = {x, y, z}, material = ... }
+//   chao   { altura = y, material = ... }
 //   modelo { arquivo = "no_toroidal.obj", posicao = {x, y, z}, escala = s, material = ... }
 //   camera { posicao = {...}, alvo = {...}, campo_de_visao = graus, abertura = a, distancia_foco = d }
 //   ceu(true | false)
 //   materiais: difuso {r, g, b} | metal({r, g, b}, rugosidade) | vidro(indice) | luz {r, g, b}
+//   texturas (no lugar da cor do difuso): xadrez({r, g, b}, {r, g, b}, escala) | imagem("arquivo.png")
+//   As imagens sao lidas so da pasta texturas/ (nomes com pastas ou ".." sao recusados).
 
 // Executa o arquivo e monta a cena. Lanca std::runtime_error com arquivo e linha se algo der errado.
 CenaPronta carregarCenaLua(const std::string& caminho, bool usarBVH = true);

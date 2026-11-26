@@ -287,6 +287,7 @@
         <tr><td><code>Vidro</code> (glass) + refractive index</td><td><code>MeshPhysicalMaterial</code> with <code>transmission</code> and <code>ior</code></td></tr>
         <tr><td><code>Luz</code> (light)</td><td>Emissive sphere + <code>PointLight</code></td></tr>
         <tr><td><code>.obj</code> models (triangles)</td><td>The same files, loaded with <code>OBJLoader</code></td></tr>
+        <tr><td><code>Quadrilatero</code> + <code>Xadrez</code> (checkerboard)</td><td>Two-triangle mesh with a repeating 2×2 <code>DataTexture</code>, aligned to the same grid</td></tr>
         <tr><td>Gradient sky</td><td>Background texture also used as ambient lighting (IBL) + a dim sun for shadows</td></tr>
       </tbody>
     </table>
@@ -308,7 +309,7 @@ import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 // Informações das imagens geradas pelo ray tracer (docs/*.png)
 const RENDERS = {
   capa:    { img: "capa.png",    info: "1200×675 px · 150 samples per pixel", tempo: "~1 min",
-             observe: "Look at the <b>metal sphere</b> in front: in the ray tracer it reflects the colorful balls; in Three.js, only the sky. And the glass sphere in the middle shows the scene <b>upside down</b>, just like a real lens." },
+             observe: "Look at the <b>metal sphere</b> in front: in the ray tracer it reflects the colorful balls and the checkerboard floor; in Three.js, only the sky. And the glass sphere in the middle shows the scene <b>upside down</b>, just like a real lens." },
   simples: { img: "simples.png", info: "800×450 px · 200 samples per pixel", tempo: "~9 s",
              observe: "The sphere on the left is <b>hollow glass</b>, an air bubble inside glass, which Three.js cannot simulate. Also compare the <b>shadows</b>: in the ray tracer they fade out smoothly." },
   modelos: { img: "modelos.png", info: "1200×675 px · 150 samples per pixel · 9,600+ triangles", tempo: "~1 min",
@@ -367,7 +368,36 @@ const ambienteCeu = pmrem.fromEquirectangular(texturaCeu).texture;
 const carregadorOBJ = new OBJLoader();
 const corLinear = (c) => new THREE.Color().setRGB(c[0], c[1], c[2], THREE.LinearSRGBColorSpace);
 
-function criarMaterial(e, ceu) {
+// Xadrez: textura 2x2 repetida. Cada repeticao cobre 2 quadrados de lado "escala",
+// alinhados com o xadrez do ray tracer (a cor "par" fica no quadrado (0, 0)).
+function texturaXadrez(t, cor, largura, altura) {
+  const a = corLinear(cor), b = corLinear(t.cor2);
+  const dados = new Float32Array([a.r, a.g, a.b, 1, b.r, b.g, b.b, 1, b.r, b.g, b.b, 1, a.r, a.g, a.b, 1]);
+  const tex = new THREE.DataTexture(dados, 2, 2, THREE.RGBAFormat, THREE.FloatType);
+  tex.colorSpace = THREE.LinearSRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  tex.repeat.set(largura / (2 * t.escala), altura / (2 * t.escala));
+  tex.needsUpdate = true;
+  return tex;
+}
+
+const carregadorTextura = new THREE.TextureLoader();
+
+function criarMaterial(e, ceu, tamanho = [1, 1]) {
+  if (e.material === "difuso" && e.textura) {
+    const mat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0, side: THREE.DoubleSide });
+    if (e.textura.tipo === "xadrez") {
+      mat.map = texturaXadrez(e.textura, e.cor, tamanho[0], tamanho[1]);
+    } else if (e.textura.tipo === "imagem") {
+      mat.map = carregadorTextura.load(e.textura.arquivo);
+      mat.map.colorSpace = THREE.SRGBColorSpace;
+    }
+    return mat;
+  }
   switch (e.material) {
     case "metal":
       return new THREE.MeshStandardMaterial({ color: corLinear(e.cor), metalness: 1, roughness: Math.max(e.rugosidade, 0.04) });
@@ -425,6 +455,21 @@ function montarCena(nome) {
       luz.shadow.bias = -0.002;
       cena.add(luz);
     }
+  }
+
+  // Quadriláteros: canto + dois lados (u, v). Viram dois triângulos com coordenadas de textura.
+  for (const q of d.quads ?? []) {
+    const c = new THREE.Vector3(...q.canto), u = new THREE.Vector3(...q.u), v = new THREE.Vector3(...q.v);
+    const cantos = [c, c.clone().add(u), c.clone().add(u).add(v), c.clone().add(v)];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(cantos.flatMap((p) => [p.x, p.y, p.z]), 3));
+    geo.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+    geo.setIndex([0, 1, 2, 0, 2, 3]);
+    geo.computeVertexNormals();
+    const malha = new THREE.Mesh(geo, criarMaterial(q, d.ceu, [u.length(), v.length()]));
+    malha.material.side = THREE.DoubleSide;
+    malha.receiveShadow = true;
+    cena.add(malha);
   }
 
   // Modelos 3D (.obj): os mesmos arquivos que o C++ lê

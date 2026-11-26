@@ -42,6 +42,21 @@ end
 function luz(cor)
   return { tipo = "luz", cor = cor }
 end
+
+-- Texturas: podem ser usadas no lugar da cor de um difuso, ex.: difuso(xadrez(...))
+function xadrez(cor1, cor2, escala)
+  return { tipo = "xadrez", cor1 = cor1, cor2 = cor2, escala = escala or 1 }
+end
+
+function imagem(arquivo)
+  return { tipo = "imagem", arquivo = arquivo }
+end
+
+-- Um chao enorme na altura indicada, feito com quad{}
+function chao(t)
+  local y = t.altura or 0
+  quad { canto = {-1000, y, -1000}, u = {2000, 0, 0}, v = {0, 0, 2000}, material = t.material }
+end
 )LUA";
 
 // A cena sendo montada fica guardada como "upvalue" de cada funcao registrada
@@ -88,8 +103,74 @@ Vec3 lerVetor(lua_State* L, int tabela, const char* funcao, const char* campo, b
     return valor;
 }
 
+// Material lido do Lua, so com tipos simples (seguro se o Lua der erro no meio da leitura).
+// Vira um DescricaoMaterial (que tem std::string) apenas depois de tudo validado.
+struct MaterialLido {
+    DescricaoMaterial::Tipo tipo = DescricaoMaterial::Tipo::Difuso;
+    Cor cor{0.5, 0.5, 0.5};
+    double rugosidade = 0;
+    double indice = 1.5;
+    DescricaoTextura::Tipo textura = DescricaoTextura::Tipo::Nenhuma;
+    Cor cor2{0, 0, 0};
+    double escala = 1;
+    const char* arquivo = nullptr;  // aponta para a string do Lua (continua viva na tabela do script)
+
+    DescricaoMaterial paraDescricao() const {
+        DescricaoMaterial d;
+        d.tipo = tipo;
+        d.cor = cor;
+        d.rugosidade = rugosidade;
+        d.indice = indice;
+        d.textura.tipo = textura;
+        d.textura.cor2 = cor2;
+        d.textura.escala = escala;
+        if (arquivo != nullptr) d.textura.arquivo = arquivo;
+        return d;
+    }
+};
+
+// So aceita um nome de arquivo simples, sem pastas: a imagem e sempre lida de texturas/
+bool nomeDeArquivoSeguro(const char* nome) {
+    std::string_view n(nome);
+    return !n.empty() && n.find("..") == std::string_view::npos && n.find_first_of("/\\:") == std::string_view::npos;
+}
+
+// Le a "cor" de um difuso: uma cor {r, g, b} ou uma textura (xadrez(...) ou imagem("..."))
+void lerCorOuTextura(lua_State* L, int material, const char* funcao, MaterialLido& m) {
+    lua_getfield(L, material, "cor");
+    int cor = lua_gettop(L);
+    if (lua_istable(L, cor)) {
+        lua_getfield(L, cor, "tipo");
+        const char* tipo = lua_tostring(L, -1);
+        lua_pop(L, 1);
+        if (tipo != nullptr && std::string_view(tipo) == "xadrez") {
+            m.textura = DescricaoTextura::Tipo::Xadrez;
+            m.cor = lerVetor(L, cor, "xadrez", "cor1", true, {});
+            m.cor2 = lerVetor(L, cor, "xadrez", "cor2", true, {});
+            m.escala = lerNumero(L, cor, "xadrez", "escala", false, 1);
+            if (m.escala <= 0) luaL_error(L, "xadrez: a escala precisa ser maior que zero");
+        } else if (tipo != nullptr && std::string_view(tipo) == "imagem") {
+            lua_getfield(L, cor, "arquivo");
+            const char* arquivo = lua_tostring(L, -1);
+            lua_pop(L, 1);
+            if (arquivo == nullptr || !nomeDeArquivoSeguro(arquivo))
+                luaL_error(L, "imagem: use so o nome do arquivo que esta na pasta texturas/ (ex.: \"marmore.png\")");
+            m.textura = DescricaoTextura::Tipo::Imagem;
+            m.cor = {1, 1, 1};
+            m.arquivo = arquivo;
+        } else if (tipo != nullptr) {
+            luaL_error(L, "%s: textura desconhecida: %s", funcao, tipo);
+        } else {
+            m.cor = lerTripla(L, cor, funcao, "cor");
+        }
+    } else {
+        luaL_error(L, "%s: a cor precisa ser {r, g, b}, xadrez(...) ou imagem(\"...\")", funcao);
+    }
+    lua_pop(L, 1);
+}
+
 // Le t.material (uma tabela criada por difuso/metal/vidro/luz)
-DescricaoMaterial lerMaterial(lua_State* L, int tabela, const char* funcao) {
+MaterialLido lerMaterial(lua_State* L, int tabela, const char* funcao) {
     lua_getfield(L, tabela, "material");
     if (!lua_istable(L, -1))
         luaL_error(L, "%s: falta o campo 'material' (use difuso{...}, metal(...), vidro(...) ou luz{...})", funcao);
@@ -99,7 +180,7 @@ DescricaoMaterial lerMaterial(lua_State* L, int tabela, const char* funcao) {
     const char* tipo = lua_tostring(L, -1);
     if (tipo == nullptr) luaL_error(L, "%s: material invalido", funcao);
 
-    DescricaoMaterial d;
+    MaterialLido d;
     using Tipo = DescricaoMaterial::Tipo;
     if (std::string_view(tipo) == "difuso")
         d.tipo = Tipo::Difuso;
@@ -113,7 +194,8 @@ DescricaoMaterial lerMaterial(lua_State* L, int tabela, const char* funcao) {
         luaL_error(L, "%s: tipo de material desconhecido: %s", funcao, tipo);
     lua_pop(L, 1);
 
-    if (d.tipo != Tipo::Vidro) d.cor = lerVetor(L, m, funcao, "cor", true, {});
+    if (d.tipo == Tipo::Difuso) lerCorOuTextura(L, m, funcao, d);
+    if (d.tipo == Tipo::Metal || d.tipo == Tipo::Luz) d.cor = lerVetor(L, m, funcao, "cor", true, {});
     if (d.tipo == Tipo::Metal) d.rugosidade = lerNumero(L, m, funcao, "rugosidade", false, 0);
     if (d.tipo == Tipo::Vidro) {
         d.indice = lerNumero(L, m, funcao, "indice", false, 1.5);
@@ -126,12 +208,26 @@ DescricaoMaterial lerMaterial(lua_State* L, int tabela, const char* funcao) {
 // esfera { centro = {x, y, z}, raio = r, material = ... }
 int luaEsfera(lua_State* L) {
     luaL_checktype(L, 1, LUA_TTABLE);
-    DescricaoEsfera e;
-    e.centro = lerVetor(L, 1, "esfera", "centro", true, {});
-    e.raio = lerNumero(L, 1, "esfera", "raio", true, 1);
-    if (e.raio <= 0) luaL_error(L, "esfera: o raio precisa ser maior que zero");
-    e.material = lerMaterial(L, 1, "esfera");
-    cenaAtual(L).esferas.push_back(e);  // tudo validado: agora e seguro mexer no vetor
+    Vec3 centro = lerVetor(L, 1, "esfera", "centro", true, {});
+    double raio = lerNumero(L, 1, "esfera", "raio", true, 1);
+    if (raio <= 0) luaL_error(L, "esfera: o raio precisa ser maior que zero");
+    MaterialLido material = lerMaterial(L, 1, "esfera");
+
+    // Tudo validado: agora e seguro criar objetos C++ e mexer no vetor
+    cenaAtual(L).esferas.push_back({centro, raio, material.paraDescricao()});
+    return 0;
+}
+
+// quad { canto = {x, y, z}, u = {x, y, z}, v = {x, y, z}, material = ... }
+int luaQuad(lua_State* L) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    Vec3 canto = lerVetor(L, 1, "quad", "canto", true, {});
+    Vec3 u = lerVetor(L, 1, "quad", "u", true, {});
+    Vec3 v = lerVetor(L, 1, "quad", "v", true, {});
+    if (cross(u, v).quaseZero()) luaL_error(L, "quad: os lados 'u' e 'v' nao podem ser paralelos nem zero");
+    MaterialLido material = lerMaterial(L, 1, "quad");
+
+    cenaAtual(L).quads.push_back({canto, u, v, material.paraDescricao()});
     return 0;
 }
 
@@ -144,13 +240,13 @@ int luaModelo(lua_State* L) {
     Vec3 posicao = lerVetor(L, 1, "modelo", "posicao", false, {0, 0, 0});
     double escala = lerNumero(L, 1, "modelo", "escala", false, 1);
     if (escala <= 0) luaL_error(L, "modelo: a escala precisa ser maior que zero");
-    DescricaoMaterial material = lerMaterial(L, 1, "modelo");
+    MaterialLido material = lerMaterial(L, 1, "modelo");
 
     DescricaoMalha m;
     m.arquivo = arquivo;  // a string do Lua continua valida porque ainda esta na pilha
     m.deslocamento = posicao;
     m.escala = escala;
-    m.material = material;
+    m.material = material.paraDescricao();
     cenaAtual(L).malhas.push_back(std::move(m));
     lua_pop(L, 1);
     return 0;
@@ -230,7 +326,8 @@ CenaPronta lerCenaLua(const std::string& codigo, const std::string& nome, bool u
     abrirBibliotecasSeguras(L);
 
     // Registra as funcoes da cena, cada uma com um ponteiro para 'cena' guardado como upvalue
-    const luaL_Reg funcoes[] = {{"esfera", luaEsfera}, {"modelo", luaModelo}, {"camera", luaCamera}, {"ceu", luaCeu}};
+    const luaL_Reg funcoes[] = {
+        {"esfera", luaEsfera}, {"quad", luaQuad}, {"modelo", luaModelo}, {"camera", luaCamera}, {"ceu", luaCeu}};
     for (const luaL_Reg& f : funcoes) {
         lua_pushlightuserdata(L, &cena);
         lua_pushcclosure(L, f.func, 1);
@@ -252,7 +349,7 @@ CenaPronta lerCenaLua(const std::string& codigo, const std::string& nome, bool u
         throw std::runtime_error("Erro na cena Lua: " + mensagemDeErro(L));
     }
 
-    if (cena.esferas.empty() && cena.malhas.empty())
+    if (cena.esferas.empty() && cena.malhas.empty() && cena.quads.empty())
         throw std::runtime_error("A cena " + nome + " nao criou nenhum objeto (use esfera{...} ou modelo{...}).");
 
     montarMundo(cena, usarBVH);

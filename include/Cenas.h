@@ -7,15 +7,26 @@
 #include "Camera.h"
 #include "Objeto.h"
 
-// Descricao "em dados" de um material e de uma esfera.
+// Descricao "em dados" de materiais, texturas e objetos.
 // A cena e montada a partir dessas descricoes, e elas tambem podem ser
 // exportadas em JSON (usado pela pagina de comparacao com Three.js).
+
+// Textura opcional de um material difuso
+struct DescricaoTextura {
+    enum class Tipo { Nenhuma, Xadrez, Imagem };
+    Tipo tipo = Tipo::Nenhuma;
+    Cor cor2{0, 0, 0};    // Xadrez: segunda cor (a primeira e a cor do material)
+    double escala = 1;    // Xadrez: tamanho de cada quadrado
+    std::string arquivo;  // Imagem: nome do arquivo dentro de texturas/
+};
+
 struct DescricaoMaterial {
     enum class Tipo { Difuso, Metal, Vidro, Luz };
     Tipo tipo = Tipo::Difuso;
-    Cor cor{0.5, 0.5, 0.5};  // Difuso, Metal e Luz
-    double rugosidade = 0;   // Metal
-    double indice = 1.5;     // Vidro
+    Cor cor{0.5, 0.5, 0.5};    // Difuso, Metal e Luz
+    double rugosidade = 0;     // Metal
+    double indice = 1.5;       // Vidro
+    DescricaoTextura textura;  // so para Difuso
 };
 
 struct DescricaoEsfera {
@@ -32,11 +43,19 @@ struct DescricaoMalha {
     DescricaoMaterial material;
 };
 
+// Quadrilatero: canto + dois lados (veja Quadrilatero.h)
+struct DescricaoQuad {
+    Ponto3 canto;
+    Vec3 u, v;
+    DescricaoMaterial material;
+};
+
 // Uma cena pronta: objetos + posicao da camera + se tem ceu
 struct CenaPronta {
     std::string nome;
     std::vector<DescricaoEsfera> esferas;
     std::vector<DescricaoMalha> malhas;
+    std::vector<DescricaoQuad> quads;
     std::shared_ptr<Objeto> mundo;
     ConfigCamera camera;
     bool ceu = true;

@@ -59,6 +59,21 @@ else()
     target_link_libraries(lua_static PUBLIC m)
 endif()
 
+# ---------- stb (ler e gravar imagens; dominio publico, um arquivo .h cada) ----------
+FetchContent_Declare(stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG        6b5799bae8a1fe3792691ef4b72ae26434c3e799  # stb_image 2.34 / stb_image_write 1.19
+)
+FetchContent_MakeAvailable(stb)
+add_library(stb_imagens STATIC src/stb_implementacao.c)
+target_include_directories(stb_imagens PUBLIC ${stb_SOURCE_DIR})
+if(MSVC)
+    target_compile_options(stb_imagens PRIVATE /W0)
+    target_compile_definitions(stb_imagens PRIVATE _CRT_SECURE_NO_WARNINGS)
+else()
+    target_compile_options(stb_imagens PRIVATE -w)
+endif()
+
 # ---------- Nucleo do ray tracer (usado pelo programa e pelos testes) ----------
 add_library(raytracer_core
     src/BVH.cpp
@@ -69,19 +84,21 @@ add_library(raytracer_core
     src/Imagem.cpp
     src/Malha.cpp
     src/Material.cpp
+    src/Quadrilatero.cpp
     src/Renderizador.cpp
     src/ScriptLua.cpp
+    src/Textura.cpp
     src/Triangulo.cpp
 )
 target_include_directories(raytracer_core PUBLIC include)
-target_link_libraries(raytracer_core PUBLIC Threads::Threads PRIVATE lua_static)
+target_link_libraries(raytracer_core PUBLIC Threads::Threads PRIVATE lua_static stb_imagens)
 target_compile_options(raytracer_core PRIVATE ${AVISOS})
 
 add_executable(raytracer src/main.cpp)
 target_link_libraries(raytracer PRIVATE raytracer_core)
 target_compile_options(raytracer PRIVATE ${AVISOS})
 
-# Copia os modelos 3D e as cenas em Lua para perto do executavel
+# Copia os modelos 3D, as cenas em Lua e as texturas para perto do executavel
 # (o Visual Studio roda o programa a partir dessa pasta). Roda em TODO build,
 # para que uma cena .lua editada seja copiada mesmo sem recompilar o C++.
 if(CMAKE_CONFIGURATION_TYPES)            # geradores com varias configuracoes (ex.: solucao .sln)
@@ -92,7 +109,8 @@ endif()
 add_custom_target(copiar_recursos ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/modelos ${PASTA_DO_EXE}/modelos
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/cenas ${PASTA_DO_EXE}/cenas
-    COMMENT "Copiando modelos/ e cenas/"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/texturas ${PASTA_DO_EXE}/texturas
+    COMMENT "Copiando modelos/, cenas/ e texturas/"
 )
 add_dependencies(raytracer copiar_recursos)
 
@@ -113,6 +131,7 @@ add_executable(testes
     tests/test_objetos.cpp
     tests/test_arquivos.cpp
     tests/test_lua.cpp
+    tests/test_texturas.cpp
 )
 target_link_libraries(testes PRIVATE raytracer_core GTest::gtest_main)
 target_compile_options(testes PRIVATE ${AVISOS})

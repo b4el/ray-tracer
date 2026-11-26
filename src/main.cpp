@@ -1,5 +1,5 @@
 // Ray tracer em C++17 - ponto de entrada.
-// Exemplo: raytracer --cena capa --largura 1200 --amostras 100 --saida capa.bmp
+// Exemplo: raytracer --cena capa --largura 1200 --amostras 100 --saida capa.png
 
 #include <chrono>
 #include <cstdlib>
@@ -15,7 +15,7 @@ namespace {
 
 struct Opcoes {
     std::string cena = "capa";
-    std::string saida = "imagem.bmp";
+    std::string saida = "imagem.png";
     int largura = 800;
     double proporcao = 16.0 / 9.0;
     int amostras = 50;
@@ -29,7 +29,7 @@ void mostrarAjuda() {
     std::cout << "Uso: raytracer [opcoes]\n\n"
               << "  --cena NOME         capa | simples | noite | modelos  (padrao: capa)\n"
               << "                      ou um script Lua, ex.: cenas/espiral.lua\n"
-              << "  --saida ARQUIVO     .bmp ou .ppm            (padrao: imagem.bmp)\n"
+              << "  --saida ARQUIVO     .png, .bmp ou .ppm      (padrao: imagem.png)\n"
               << "  --largura N         largura em pixels       (padrao: 800)\n"
               << "  --amostras N        amostras por pixel      (padrao: 50)\n"
               << "  --profundidade N    reflexoes por raio      (padrao: 20)\n"

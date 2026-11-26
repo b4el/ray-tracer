@@ -22,9 +22,10 @@ CMakeUserPresets.json
 *.lib
 *.a
 
-# Imagens geradas ao rodar (as do README ficam em docs/ como PNG)
+# Imagens geradas ao rodar (as do README ficam em docs/ e as texturas em texturas/)
 *.bmp
 *.ppm
+/*.png
 
 # Editores e sistema
 .vscode/

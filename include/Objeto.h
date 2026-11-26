@@ -14,6 +14,7 @@ struct Impacto {
     Vec3 normal;             // sempre aponta CONTRA o raio
     double t = 0;            // distancia ao longo do raio
     bool faceDeFora = true;  // o raio veio de fora do objeto?
+    double u = 0, v = 0;     // coordenadas na superficie, de 0 a 1 (usadas pelas texturas de imagem)
     const Material* material = nullptr;
 
     // normalParaFora deve ter comprimento 1

@@ -73,3 +73,29 @@ TEST(CenaLua, SandboxBloqueiaArquivosESistema) {
 TEST(CenaLua, LacoInfinitoEInterrompido) {
     EXPECT_NE(erroDoScript("while true do end").find("demorou demais"), std::string::npos);
 }
+
+TEST(CenaLua, QuadChaoEXadrez) {
+    CenaPronta c = lerCenaLua(
+        "chao { altura = 0, material = difuso(xadrez({1, 1, 1}, {0, 0, 0}, 0.5)) }\n"
+        "quad { canto = {0, 0, -2}, u = {2, 0, 0}, v = {0, 2, 0}, material = metal({1, 1, 1}, 0) }\n",
+        "teste.lua");
+    ASSERT_EQ(c.quads.size(), 2u);
+    EXPECT_EQ(c.quads[0].material.textura.tipo, DescricaoTextura::Tipo::Xadrez);
+    EXPECT_DOUBLE_EQ(c.quads[0].material.textura.escala, 0.5);
+    EXPECT_DOUBLE_EQ(c.quads[0].material.textura.cor2.x, 0);
+    EXPECT_EQ(c.quads[1].material.tipo, DescricaoMaterial::Tipo::Metal);
+}
+
+TEST(CenaLua, ImagemSoDaPastaDeTexturas) {
+    // Nomes com pastas ou ".." sao recusados antes de tentar abrir qualquer arquivo
+    for (const char* nome : {"../segredo.png", "C:/Windows/x.png", "sub/pasta.png", ""}) {
+        std::string codigo =
+            std::string("esfera { centro = {0, 0, 0}, raio = 1, material = difuso(imagem(\"") + nome + "\")) }";
+        EXPECT_NE(erroDoScript(codigo).find("texturas/"), std::string::npos) << nome;
+    }
+}
+
+TEST(CenaLua, QuadInvalido) {
+    std::string e = erroDoScript("quad { canto = {0, 0, 0}, u = {1, 0, 0}, v = {2, 0, 0}, material = vidro() }");
+    EXPECT_NE(e.find("paralelos"), std::string::npos) << e;
+}

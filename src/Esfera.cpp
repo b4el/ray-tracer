@@ -3,6 +3,18 @@
 #include <cmath>
 #include <utility>
 
+namespace {
+// Converte um ponto da esfera de raio 1 em (u, v), como latitude e longitude:
+// u da a volta em torno do eixo y; v vai de 0 (polo de baixo) a 1 (polo de cima).
+void coordenadasDaEsfera(const Vec3& p, double& u, double& v) {
+    constexpr double PI = 3.14159265358979323846;
+    double theta = std::acos(-p.y);
+    double phi = std::atan2(-p.z, p.x) + PI;
+    u = phi / (2 * PI);
+    v = theta / PI;
+}
+}  // namespace
+
 Esfera::Esfera(const Ponto3& centro, double raio, std::shared_ptr<Material> material)
     : centro_(centro), raio_(std::fmax(0.0, raio)), material_(std::move(material)) {
     Vec3 r{raio_, raio_, raio_};
@@ -33,7 +45,9 @@ bool Esfera::atinge(const Raio& r, Intervalo t, Impacto& impacto) const {
 
     impacto.t = raiz;
     impacto.ponto = r.em(raiz);
-    impacto.definirNormal(r, (impacto.ponto - centro_) / raio_);
+    Vec3 normalParaFora = (impacto.ponto - centro_) / raio_;
+    impacto.definirNormal(r, normalParaFora);
+    coordenadasDaEsfera(normalParaFora, impacto.u, impacto.v);
     impacto.material = material_.get();
     return true;
 }
